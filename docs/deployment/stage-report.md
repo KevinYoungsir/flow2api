@@ -68,7 +68,7 @@ $env:PYTHONIOENCODING='utf-8'
 
 已实际尝试创建私有 flow2api 项目，Railway 返回：`Your trial has expired. Please select a plan to continue using Railway.` 随后重新列举项目确认没有新建成功。没有创建服务/卷、触发构建部署或设置真实 Variables，无法确认 Flow2API 云端端口、挂载、运行日志或健康检查。
 
-当前阻塞是 **Railway 试用到期，需要用户在控制台激活套餐；5 美元硬预算需要明确工作区限额安排**。Hobby 每月 5 美元是最低消费而非封顶，硬限额影响整个工作区（含现有 autowealth-ai）。没有擅自订阅、改变工作区限额或影响旧项目。详见 [预算与授权记录](budget.md)。
+用户最新已确认 **Hobby 已激活，硬上限尚未设置**，因此套餐激活问题已由用户确认解决。当前阻塞只剩 **5 美元硬预算的工作区限额安排及生效核实**。Hobby 每月 5 美元是最低消费而非封顶，硬限额影响整个工作区（含现有 autowealth-ai）。连接器无费用限额工具，CLI 未登录，浏览器读取受 MXC 启动器错误阻塞；已提供用户手动设置入口和步骤。没有擅自改变工作区限额或影响旧项目。详见 [预算与授权记录](budget.md)。
 
 ## 阶段五：域名与 HTTPS 未验收
 
