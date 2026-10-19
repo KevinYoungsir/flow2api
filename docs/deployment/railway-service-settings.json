@@ -6,7 +6,7 @@
   "source": {
     "repo": "KevinYoungsir/flow2api",
     "branch": "deploy/railway-single-service",
-    "commitHash": "95b22111e776cc20a7b104c3dd35c57375618748"
+    "commitHash": "5d6c401df4330b411c4f8c6aec92677455f81af3"
   },
   "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
   "deploy": {

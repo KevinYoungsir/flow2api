@@ -37,7 +37,7 @@ $env:PYTHONIOENCODING='utf-8'
 | 检查 | 结果 | 证据/范围 |
 | --- | --- | --- |
 | Python 编译 | PASS | main/src/scripts/tests，实际执行 |
-| 全部单元与集成测试 | PASS | **193 tests，0 failures，0 errors**；会话连续性修复后最终一次 43.407 秒，原有 170 + 新增 23，并补充既有进程测试断言 |
+| 全部单元与集成测试 | PASS | **196 tests，0 failures，0 errors**；同步诊断补充后最终一次 33.975 秒，原有 170 + 新增 26，并补充既有进程测试断言 |
 | 依赖一致性 | PASS | pip check：No broken requirements found |
 | HTTP 启动与 PORT | PASS（本地） | 独立 Uvicorn 子进程，临时端口、与源码不同 cwd，配置为 production |
 | 登录/退出/改密码 | PASS（本地） | 错密码 401、正确登录、会话撤销、旧密码失效、bcrypt 存储 |
@@ -72,10 +72,10 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 - flow2api-data：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
 - Dockerfile builder，python main.py，`/health`，120 秒检查，单副本，不休眠，0.5 vCPU / 0.5GB 内存上限。
 - 已应用生产运行变量及用户手动设置的两个秘密变量；秘密值未回显、写入文件或提交。
-- 当前源码固定为 **`95b22111e776cc20a7b104c3dd35c57375618748`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904。后续文档提交不会改变当前固定的运行版本。
+- 当前源码固定为 **`5d6c401df4330b411c4f8c6aec92677455f81af3`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904，插件来源修复版为 95b22111，会话连续性修复版为 d2053ea2。后续文档提交不会改变当前固定的运行版本。
 - 正式地址 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用，均指向 8000；PUBLIC_BASE_URL 为根域，CORS 同时包含两个地址。
 
-首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复发布为当前 **`ca4df022-8a58-49a6-8589-8e0448906a2b`（SUCCESS，17:19:13）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
+首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复为 ca4df022（SUCCESS，17:19:13），会话连续性修复为 104c3d82（SUCCESS，17:37:54）。当前诊断版本部署 **`d5528bcf-0012-491b-b751-43d90a78ebd9`（SUCCESS，17:53:14）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
 
 | 云端检查 | 实际结果 |
 | --- | --- |
@@ -114,9 +114,19 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 用户确认同一 Chrome 配置中的 Flow 页面正常且账号一致后，继续审计发现 bootstrap GET 与后续 RPC/StreamChat 使用独立快照，响应更新/删除的 Cookie 丢失。4 项合成会话测试实际复现了后续请求仍使用旧值的问题。修复复用已有 Cookie jar/导出逻辑：GET 使用带作用域的 jar，读取 libcurl 完整快照（含重定向更新、删除），在同一次调用内传给后续请求；不改变生成参数、验证码或上游拒绝处理。测试覆盖轮换、删除、域/路径隔离、登录重定向拒绝；上游仍返回 401 时，只附加 page_identity=present/missing/unknown 与 cookies_changed=yes/no/unknown，不输出邮箱、Cookie、XSRF 或会话 ID。全套 193 项通过。此为已复现兼容缺陷的修复，是否解决用户真实 401 仍需插件重新同步，未把合成测试作为真实登录或生成通过。
 
+会话兼容修复 d2053ea2 已发布为 104c3d82（SUCCESS，17:37:54）。用户重试仍得到 `rpc=nzlxg, code=401 [page_identity=missing; cookies_changed=yes]`；不能把缺少页面身份字段直接解释为匿名页面，也不能把这个已复现缺陷的修复记为真实同步通过。用户再次确认后台和插件为同一账号，页面地址不含 authuser 或 /u/ 账号序号。
+
+17:38:28 云端管理接口 POST /api/tokens 实际 200，随后只读检查确认已有 1 个启用账号，来源不是插件的默认添加备注；该记录包含有作用域的 Cookie，没有分区、过期或非根路径记录，也未配置账号专用代理。真实 POST /api/tokens/{id}/refresh-credits 返回 200 且余额为正，证明已保存会话可完成 Google 余额 RPC；没有提交生成任务，也不能据此认定插件上传会话相同或有效。插件和管理添加路径均调用同一个 st_to_at 校验方法。
+
+为继续定位两份会话差异，5d6c401 增加仅在插件独立鉴权通过、上游 nzlxg 返回 401 后执行的比较：对同邮箱既有记录，按项目页和 RPC URL 的实际 Cookie 范围比较，只返回 stored_session、auth_values 的 same/different 标签及 missing_auth/extra_auth 数量。没有既有记录时返回 missing，诊断读取失败返回 unknown；不会输出 Cookie 值、邮箱、连接令牌，也不会保存失败上传。3 项新增回归覆盖脱敏、不写账号、域/路径范围、JSON 格式差异和诊断异常不掩盖原拒绝；全套 196 项通过。诊断本身不修复上游拒绝，真实同步仍待用户重试结果。
+
+5d6c401 已固定发布为 d5528bcf，平台确认 1/1 在线、无 staged/applying 变更、500 MB Volume 仍挂载 /app/data。正式域名实际回归全部通过：health、未登录管理保护、错误密码、登录、安全 Cookie、管理/测试页面、Token/日志/统计读取、缓存有效地址、正确/错误 API Key、非空模型目录、退出与会话撤销。已请用户重试一次插件以取得新标签。
+
+生成预检确认该账号启用、图片和视频开关开启、凭据未到期且有余额；当前验证码方式 yescaptcha 的密钥仍为空。已请用户仅在后台填写已有且符合上游使用规则的配置，不要求新购或在聊天发送密钥。**真实图片生成、真实视频生成、生成媒体访问继续为 NOT RUN**，不会提交已知缺配置的任务，也未调整验证码或访问限制。
+
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
 
 ## 用户下一步
 
-1. 在 https://socool.xin 的现有管理后台自行添加有权使用的上游账号和必要参数，不在聊天发送 Token/Cookie；准备好后继续真实图片/视频验收。DNS 无需重复修改。
+1. 后台已有 1 个可查询余额的启用账号，无需重复添加。插件同步仍被 Google 拒绝，需取得带新会话比较标签的重试结果；真实生成还需在后台补齐现有合法配置，不在聊天发送 Token/Cookie/密钥。DNS 无需重复修改。
 2. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。

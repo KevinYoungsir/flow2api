@@ -33,7 +33,7 @@ railway status
 
 关联前核对具体 workspace/account、project、environment、service，以及已确认的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。使用现已创建的独立项目，不要重复新建或关联到 autowealth-ai。
 
-GitHub 部署分支已推送并绑定，当前 Railway 固定运行提交 `95b22111e776cc20a7b104c3dd35c57375618748`（含缓存有效地址和 Chrome 插件专用鉴权来源修复），部署 ca4df022-8a58-49a6-8589-8e0448906a2b 为 SUCCESS。后续文档提交不会自动改变该固定运行版本；发布代码前应核对目标 SHA 和待发布变更。CLI 上传不是 GitHub 分支绑定。
+GitHub 部署分支已推送并绑定，当前 Railway 固定运行提交 `5d6c401df4330b411c4f8c6aec92677455f81af3`（含缓存有效地址、插件专用鉴权来源、会话更新传递及失败上传脱敏比较），部署 d5528bcf-0012-491b-b751-43d90a78ebd9 为 SUCCESS。管理/API 线上回归已通过；插件真实同步仍被 Google 拒绝，诊断版本不代表同步或生成验收通过。后续文档提交不会自动改变该固定运行版本；发布代码前应核对目标 SHA 和待发布变更。CLI 上传不是 GitHub 分支绑定。
 
 ## 3. Railway 服务设置
 
