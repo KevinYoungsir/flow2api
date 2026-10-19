@@ -2,6 +2,7 @@
 
 | 现象 | 检查与处理 |
 | --- | --- |
+| Config as Code is deprecated | 新服务不能使用旧 railway.json/railway.toml；本次已移除旧文件，使用服务设置及 Dockerfile。IaC 需单独经过 config pull/plan 审查，不能只因旧 schema 校验通过就假定可部署 |
 | 502 / health 超时 | 构建是否使用 Dockerfile；启动命令是否 python main.py；实际监听是否 0.0.0.0:PORT；域名目标端口一致；不要增加多个 worker |
 | Production requires... | 查看错误对应变量名称；新库补安全密码/API Key 与明确 HTTPS 来源；禁止用默认值或 development 掩盖生产问题 |
 | 已设置新 Variables，但仍拒绝旧密码/弱 Key | 已有 DB 为设置来源；bootstrap 不覆盖 DB。先安全备份，在可信本地实例登录原库改设置，再迁移；不要删库重建 |

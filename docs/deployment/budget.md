@@ -22,9 +22,9 @@
 
 ### 当前状态（用户最新确认）
 
-用户已明确确认 **Hobby 已激活，硬上限尚未设置**。套餐激活应视为已确认，不再反复要求确认激活；当前唯一的账单前置条件是落实并核实 USD 5 的 Compute 硬上限，同时明确接受对同工作区其他项目的影响。
+用户最新明确确认 **Hobby 已激活，工作区硬上限已设为 $5，并接受同时影响旧项目**。这些已确认事项不再反复询问。已成功创建独立 flow2api 项目、单个服务及 500MB 的 /app/data 持久卷；配置服务 0.5 vCPU / 0.5GB 内存上限。没有修改 autowealth-ai 的配置或数据。
 
-已复核连接器仍没有费用限额设置工具，CLI 仍返回 Unauthorized；浏览器工具重置后依然因 MXC 启动器错误无法读取页面。因此需要用户在 [Workspace Usage](https://railway.com/workspace/usage) → Set Usage Limits → Compute Usage → Hard limit 手动填 5 并保存，然后告知结果。在限额未生效时，不重试此前已被自动审批拒绝的项目创建。
+连接器没有费用限额读取工具，CLI 仍返回 Unauthorized，浏览器工具有 MXC 启动器错误，因此限额生效证据来自用户明确确认；项目创建请求随后已获准并成功。后续不提高或移除该限额。
 
 Railway Hobby 为每月 5 美元最低消费，包含首 5 美元资源用量；超过额度会继续计费。订阅 Hobby 本身不等于设置 5 美元最高账单。[官方账单说明](https://docs.railway.com/pricing/understanding-your-bill)
 

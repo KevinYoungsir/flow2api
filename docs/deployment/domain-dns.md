@@ -1,6 +1,13 @@
 # socool.xin 域名与 DNS
 
-当前未关联 Railway 服务，未取得真实 Railway CNAME/ALIAS 目标或验证 TXT；本次没有修改 DNS，也未确认 Railway 证书。任何公网现有响应都不能作为本次部署成功的证据。
+已在独立 Railway flow2api 服务添加 socool.xin，取得以下实际记录；尚未修改阿里云 DNS。Railway 当前证书状态为 `CERTIFICATE_STATUS_TYPE_VALIDATING_OWNERSHIP`，不代表证书已签发或站点已上线。
+
+| 用途 | 阿里云主机记录 | Railway 实际要求值 |
+| --- | --- | --- |
+| 根域路由（先确认根域 ALIAS/展平及现有记录） | @ | `vz2fefnk.up.railway.app` |
+| 所有权 TXT | _railway-verify | `railway-verify=8d6b5abe35bc40154e038eea5a1c024fc36be844d7afcffa5735278e039faf87` |
+
+Railway 返回的路由类型是 CNAME；阿里云根域可否用 ALIAS 实现等效路由仍须按下文核对。该 TXT 值用于公开 DNS 归属验证，不是管理员密码或 API Key。服务端口为已配置的 PORT=8000。
 
 ## 获取真实记录
 
@@ -15,9 +22,9 @@ railway domain status socool.xin --service <确认后的服务> --environment <�
 
 | 类型 | 阿里云主机记录 | 值 | 当前状态 |
 | --- | --- | --- | --- |
-| 根域路由 ALIAS/CNAME（需先确认方案） | @ | 仅填 Railway 实际返回目标 | 未取得 |
-| 所有权 TXT | 将 Railway 提供的完整记录名换成 socool.xin 相对主机名 | Railway 实际返回值 | 未取得 |
-| 其他额外验证记录 | 完全按 Railway 实际要求 | 实际返回值 | 未取得 |
+| 根域路由 ALIAS/CNAME（需先确认方案） | @ | vz2fefnk.up.railway.app | 已取得，尚未修改 DNS |
+| 所有权 TXT | _railway-verify | 见上方完整值 | 已取得，Railway 尚未验证 |
+| 其他额外验证记录 | 完全按 Railway 实际要求 | 当前未返回额外记录 | 无 |
 
 ## 阿里云根域名注意事项
 

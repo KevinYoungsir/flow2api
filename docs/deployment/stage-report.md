@@ -14,7 +14,7 @@
 | src/core/database.py、auth.py | 迁移前读取校验既有凭据；保留 DB 配置；管理员密码兼容 bcrypt 迁移；常量时间比较；实际 SQLite 读写就绪探测 |
 | src/api/admin.py、src/main.py | Secure/HttpOnly/Lax Cookie、会话 TTL/撤销、生产管理来源限制；/health 只公开状态并正确返回 503；metrics 鉴权；生产关闭 API 文档 |
 | src/api/routes.py、services/file_cache.py、generation_handler.py | 公开 URL 优先环境配置，统一 TMP_DIR 和静态路径；生成器仅改缓存目录一行，没有修改核心生成逻辑 |
-| Dockerfile、.dockerignore、.gitignore、railway.json | 保留现有镜像启动方式；补齐状态/秘密排除；/health、单副本、不休眠和失败重试配置 |
+| Dockerfile、.dockerignore、.gitignore、服务设置快照 | 保留现有镜像启动方式；补齐状态/秘密排除；/health、单副本、不休眠和失败重试配置。云端发现旧 Config as Code 被新服务拒绝，已移除本次添加的根 railway.json，使用服务设置并读取核对 |
 | requirements.txt | 补 Pillow（现有代码与测试使用） |
 | README、docs/deployment/* | 更新部署入口、健康/metrics 说明；给出变量、备份、根域名方案和排障说明 |
 | scripts/*、tests/test*deployment*.py | 可重跑的本地/容器/HTTP 检查、无覆盖 SQLite 快照，以及新增部署边界与真实子进程测试 |
@@ -50,7 +50,7 @@ $env:PYTHONIOENCODING='utf-8'
 | 生产缺配置失败 | PASS | 子进程退出非 0，未初始化数据库；示例凭据/不安全来源/缺 Volume 元数据测试拒绝 |
 | SQLite 备份/恢复演练 | PASS（临时目录） | 在线 WAL 快照、integrity_check、新路径恢复、拒绝覆盖已有目标 |
 | 日志秘密检查 | PASS（测试范围） | 子进程日志未包含随机测试密码/Key/已记录的会话；没有执行真实上游日志审计 |
-| Railway 配置字段 | PASS（静态） | 读取实时官方 railway.schema.json，检查所用字段和构建器取值；不等于云端部署 |
+| Railway 配置 | PASS（服务设置已核对） | 先前 schema 静态检查不能证明新服务支持旧 railway.json；平台明确拒绝该方式后已移除，通过连接器设置 Dockerfile/health/资源上限并读取验证 |
 | Compose 文件解析 | PASS（静态） | PyYAML 解析全部 4 文件；原文件不变，**没有运行 Compose** |
 | Docker build/run/重建/Volume | **BLOCKED** | `docker version` / `docker compose version` 命令不可用；check_docker.py 实际返回 2 / BLOCKED；没有镜像或容器验收成功记录 |
 
@@ -58,7 +58,7 @@ $env:PYTHONIOENCODING='utf-8'
 
 仍有 Python 3.12 SQLite datetime adapter 和 Starlette/AnyIO 依赖的 DeprecationWarning，不影响本次通过结果。容器基于 Python 3.11，当前只能在 Windows Python 3.12 实测；Linux 镜像构建与运行必须补验。
 
-## 阶段四：分支已推送，Railway 套餐阻塞
+## 阶段四：云端项目、服务与 Volume 已创建，等待秘密变量
 
 已安装 CLI，首次版本输出 5.26.2。`railway whoami` 返回 OAuth invalid_grant / Unauthorized，status 无关联项目；只读查看过 up/domain/volume/login 实际帮助。
 
@@ -66,13 +66,27 @@ $env:PYTHONIOENCODING='utf-8'
 
 用户随后明确授权**新建独立 flow2api 项目、一个应用服务和 /app/data 持久卷，月度上限 5 美元**。已将通过测试的部署分支实际推送到 GitHub，最初代码提交 `330c7b258947528db9eea21a086b1458b0083d1f` 在远端可验证。
 
-已实际尝试创建私有 flow2api 项目，Railway 返回：`Your trial has expired. Please select a plan to continue using Railway.` 随后重新列举项目确认没有新建成功。没有创建服务/卷、触发构建部署或设置真实 Variables，无法确认 Flow2API 云端端口、挂载、运行日志或健康检查。
+早先因试用到期与预算前置条件受阻。用户现已确认 **Hobby 已激活，Compute 硬上限已设为 $5，接受同时影响旧项目**，该前置条件已解决，不再重复询问。
 
-用户最新已确认 **Hobby 已激活，硬上限尚未设置**，因此套餐激活问题已由用户确认解决。当前阻塞只剩 **5 美元硬预算的工作区限额安排及生效核实**。Hobby 每月 5 美元是最低消费而非封顶，硬限额影响整个工作区（含现有 autowealth-ai）。连接器无费用限额工具，CLI 未登录，浏览器读取受 MXC 启动器错误阻塞；已提供用户手动设置入口和步骤。没有擅自改变工作区限额或影响旧项目。详见 [预算与授权记录](budget.md)。
+已实际创建并通过 describe-service 读取核对：
+
+- 独立私有项目 flow2api：`a1ad9b63-e582-46b6-9c4a-4566a682c1f1`。
+- production 环境：`dcc6e47d-ac81-43a1-88d1-44695fea3bfa`。
+- flow2api 服务：`5a28a95f-7579-4595-8755-a9a1aeddb151`。
+- flow2api-data 卷：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
+- Dockerfile builder，启动 python main.py，/health，启动检查 120 秒，sfo 单副本，0.5 vCPU / 0.5GB 内存限制。
+- 已配置 9 个非秘密变量（包括 PORT=8000、生产模式、公开地址、CORS 和数据/缓存目录）。
+- Railway 地址：`https://flow2api-production-d82c.up.railway.app`，路由目标端口 8000；尚未以健康检查验收上线。
+
+平台拒绝新服务使用旧 railway.json，已根据当前官方说明改用服务设置；本仓库快照只用于审计，不会自动应用。CLI 的账号授权仍失效，但连接器能完成本次资源操作。
+
+当前等待用户在 Variables 设置 FLOW2API_ADMIN_PASSWORD 和 FLOW2API_API_KEY。已提供操作步骤，不索取秘密值。构建、运行、云端重启持久化仍待真正执行；资源创建不能标记部署成功。
 
 ## 阶段五：域名与 HTTPS 未验收
 
-没有添加 Railway 自定义域名，未取得路由/验证记录，没有改动阿里云 DNS。只读本地查询显示 NS 为 dns31/dns32.hichina.com，本机 A 查询得到 198.18.2.137（代理/合成解析环境的可能性，不能作为公网实际源站地址）。curl 对 HTTPS /health 返回状态 000/TLS handshake failed，HTTP 也没有获得有效响应；这只说明本机探测未成功，不能据此断言全球 DNS 或证书状态。
+已在新服务添加 socool.xin，实际路由目标为 `vz2fefnk.up.railway.app`，并取得 `_railway-verify.socool.xin` 的实际验证 TXT。完整记录已写入 [domain-dns.md](domain-dns.md)。Railway 返回证书状态 VALIDATING_OWNERSHIP，未声称归属验证或 HTTPS 已完成。
+
+尚未修改阿里云 DNS，需保留原 MX/TXT。早前本地解析与 TLS 探测未成功（可能为本机合成解析/代理环境），不能据此断言全球 DNS 或证书状态。
 
 具体根域 ALIAS、MX/TXT 保留及验证步骤见 [domain-dns.md](domain-dns.md)。实际 Railway 记录、域名归属和证书状态仍待取得。
 
@@ -85,7 +99,7 @@ $env:PYTHONIOENCODING='utf-8'
 ## 用户下一步
 
 1. 安装/启动可用 Docker Desktop Linux 容器引擎，以便真实补跑容器与 Compose 验收。
-2. 部署目标和 5 美元月度上限已经确认；在 Railway 控制台激活适合该预算的套餐，并确认工作区限额及对旧项目的影响。使用 CLI 时才需要另行 railway login。
+2. 套餐、5 美元工作区硬上限及影响范围已经由用户确认，不再重复要求。使用 CLI 时才需要另行 railway login。
 3. 通过 Railway Variables 设置新库管理员密码和本服务 API Key；不在聊天发送秘密。
-4. 服务上线后取得真实域名记录，确认阿里云 ALIAS 能力和现有 DNS，再授权具体 DNS 修改。
+4. 真实域名记录已取得；确认阿里云 ALIAS 能力和现有 DNS，再授权具体 DNS 修改。
 5. 在管理后台配置有权使用的上游账号与必要参数，确认额度消耗后再进行真实图片/视频验收。

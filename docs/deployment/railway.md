@@ -20,7 +20,7 @@ python -m venv .venv
 
 本机 CLI 的 `railway whoami` 返回 Unauthorized / OAuth invalid_grant，`railway status` 没有关联项目。随后启用的 Railway 连接器已授权成功，识别为 `KevinYoung`（@kevinyoungsir）；唯一可见项目 `eloquent-enchantment` 的 production 环境已有不同仓库的 `autowealth-ai` 服务及持久卷，不是 Flow2API 部署目标。已只读盘点，没有改动该项目。
 
-用户已确认新建独立 flow2api 项目、一个服务和 /app/data 卷，月度上限 5 美元，部署分支也已推送。连接器实际创建项目时返回试用已到期，需要用户先在控制台激活套餐；详见 [预算与授权记录](budget.md)。Hobby 的 5 美元不是费用封顶，工作区硬限额还会影响已有 autowealth-ai，不得未经确认变更。
+用户已确认 Hobby 激活、工作区 Compute 硬上限已设为 5 美元，并接受影响同工作区旧项目。独立 flow2api 项目、production 环境、一个服务和挂载 /app/data 的 500MB 卷已创建。资源 ID 与设置快照见 [railway-service-settings.json](railway-service-settings.json)，授权过程见 [预算记录](budget.md)。
 
 套餐和预算安排完成后，可继续通过连接器操作，无需为此重新登录 CLI；生产初始化凭据通过 Variables 设置。若选择 CLI 路径，再由用户运行：
 
@@ -31,7 +31,7 @@ railway link
 railway status
 ```
 
-关联前核对具体 workspace/account、project、environment、service，以及已确认的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。当前新项目创建失败，尚未创建资源或触发部署。
+关联前核对具体 workspace/account、project、environment、service，以及已确认的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。使用现已创建的独立项目，不要重复新建或关联到 autowealth-ai。
 
 GitHub 部署分支已推送；项目可创建后需确认 Railway 读取仓库的权限并绑定该分支。也可在确认目标后从本地上传部署当前 checkout；CLI 上传不是 GitHub 分支绑定。
 
@@ -40,10 +40,12 @@ GitHub 部署分支已推送；项目可创建后需确认 Railway 读取仓库�
 1. 使用根 Dockerfile，保留镜像 CMD `python main.py`，不另写绕过配置校验的 Uvicorn 多 worker 命令。
 2. 附加一个持久 Volume，挂载 `/app/data`。不要在构建或 pre-deploy 阶段初始化数据库。迁移随服务启动执行。
 3. 阅读 [变量表](environment-variables.md)，在 Variables 设置生产模式、安全初始化凭据、公开 HTTPS 地址和 CORS 来源。不要复制本地示例密码/API Key。
-4. 根 `railway.json` 选择 DOCKERFILE、`/health`、120 秒启动检查、失败最多重试 3 次、单副本。控制台确认只有一个区域一个实例，关闭不适合本服务长任务的休眠设置。
+4. 在 Railway 服务设置选择 DOCKERFILE、`/health`、120 秒启动检查、失败最多重试 3 次、单副本、不休眠。当前为 sfo 单实例、0.5 vCPU / 0.5GB 内存上限；这些资源上限不能代替工作区费用硬上限。设置已通过连接器写入并读取核对。
 5. 标准镜像没有本地浏览器运行时，生产配置不能选 browser/personal/extension；不会通过自动下载浏览器或规避上游限制完成部署。原有 headed Dockerfile/Compose 仍供原本的本地工作流使用。
 
 Railway 持久卷仅在运行阶段挂载，并自动注入挂载路径变量；服务依靠该变量检查 DATA_DIR 与卷路径一致。此检查不替代云端查看 Volume 及重启验证。[Railway Volumes](https://docs.railway.com/volumes)
+
+实际部署时发现 Railway 已弃用 Config as Code，新服务不能启用 `railway.json`/`railway.toml`。先前静态 schema 校验不能证明新服务接受该方式，因此已移除根 railway.json，采用官方 Dockerfile 加服务设置。设置快照不会自动应用。后续需要 IaC 时，在已登录且关联正确项目的 CLI 执行 config pull/plan 后再审查，不直接应用未经核对的资源图。[当前平台说明](https://docs.railway.com/infrastructure-as-code#iac-vs-config-as-code)
 
 ## 4. 部署和上线检查
 
@@ -89,4 +91,4 @@ Railway 当前 HTTP 最长 15 分钟，持续无数据传输 5 分钟会关闭�
 
 恢复演练：在新路径/新卷恢复快照，单独启动隔离实例，检查登录、配置、行数、integrity_check。正式恢复先暂停写入并备份当前版本，由用户确认后切换到验证过的卷/数据库；保留原卷回滚，不直接覆盖活跃 flow.db 或删除 WAL/SHM。本次只在临时目录真实执行了快照和新路径恢复，没有触碰生产数据。
 
-SQLite Schema 迁移沿用已有增列/补表，缺行补齐，不覆盖已有设置。版本回滚可能不兼容新 Schema，先备份再部署。Railway config 以仓库配置为准，Volume、域名和 Variables 仍需在目标服务实际确认。[配置参考](https://docs.railway.com/config-as-code/reference)
+SQLite Schema 迁移沿用已有增列/补表，缺行补齐，不覆盖已有设置。版本回滚可能不兼容新 Schema，先备份再部署。当前配置来源为 Railway 服务设置，Volume、域名和 Variables 需在目标服务实际确认；仓库快照用于复核。
