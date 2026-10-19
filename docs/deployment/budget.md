@@ -11,6 +11,13 @@
 - Railway 拒绝请求，原文：`Your trial has expired. Please select a plan to continue using Railway.`
 - 随后重新列举项目，仍只有 `eloquent-enchantment`。Flow2API 项目、服务、Volume、域名与部署均未创建；没有触发运行资源计费或修改现有应用。
 
+## 用户要求继续部署后的复核
+
+- 已再次核对 GitHub 部署分支与本地一致，提交为 `76504e5ac18dae6b9d7bc3161ef552064232ebb4`；Railway 只读项目列表仍无 flow2api。
+- 尝试重新创建项目时，被自动审批拒绝，未到达实际资源创建步骤。审批理由是：先前试用已到期，尚无证据确认套餐及工作区预算限额已经激活；不得用间接方式绕过此拒绝。
+- 已执行不修改资源的安全核验：浏览器读取工具遇到 MXC 启动器错误；Railway CLI whoami 和 usage limit status 均返回 OAuth invalid_grant / Unauthorized。因此当前无法独立验证套餐与硬限额。
+- 已请用户确认当前套餐、Compute 硬上限及其对同工作区 autowealth-ai 的影响。原有新建项目/服务/卷与 5 美元上限授权继续有效，无需重复授权这些既定事项；当前缺的是账单前置条件的核实。
+
 ## 5 美元上限的实际含义
 
 Railway Hobby 为每月 5 美元最低消费，包含首 5 美元资源用量；超过额度会继续计费。订阅 Hobby 本身不等于设置 5 美元最高账单。[官方账单说明](https://docs.railway.com/pricing/understanding-your-bill)
