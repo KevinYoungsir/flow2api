@@ -3,7 +3,11 @@
   "projectId": "a1ad9b63-e582-46b6-9c4a-4566a682c1f1",
   "environmentId": "dcc6e47d-ac81-43a1-88d1-44695fea3bfa",
   "serviceId": "5a28a95f-7579-4595-8755-a9a1aeddb151",
-  "source": { "repo": "KevinYoungsir/flow2api", "branch": "deploy/railway-single-service" },
+  "source": {
+    "repo": "KevinYoungsir/flow2api",
+    "branch": "deploy/railway-single-service",
+    "commitHash": "4e4519f2880c19a37032498e5fa141f9617d66dc"
+  },
   "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
   "deploy": {
     "startCommand": "python main.py",

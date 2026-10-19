@@ -18,11 +18,11 @@ python -m venv .venv
 
 ## 2. 账号和目标确认
 
-本机 CLI 的 `railway whoami` 返回 Unauthorized / OAuth invalid_grant，`railway status` 没有关联项目。随后启用的 Railway 连接器已授权成功，识别为 `KevinYoung`（@kevinyoungsir）；唯一可见项目 `eloquent-enchantment` 的 production 环境已有不同仓库的 `autowealth-ai` 服务及持久卷，不是 Flow2API 部署目标。已只读盘点，没有改动该项目。
+本机 CLI 的早期 Unauthorized / OAuth invalid_grant 已通过用户完成 railway login 解决，当前 CLI 与连接器均可用，识别为 `KevinYoung`（@kevinyoungsir）。目录已关联独立 flow2api 项目及 production/flow2api 服务。旧项目 eloquent-enchantment 的 autowealth-ai 来自另一仓库，未改动。
 
-用户已确认 Hobby 激活、工作区 Compute 硬上限已设为 5 美元，并接受影响同工作区旧项目。独立 flow2api 项目、production 环境、一个服务和挂载 /app/data 的 500MB 卷已创建。资源 ID 与设置快照见 [railway-service-settings.json](railway-service-settings.json)，授权过程见 [预算记录](budget.md)。
+用户已激活 Hobby。平台不接受原先 5 美元 Compute 硬上限，用户随后明确同意最高 **10 美元/月**。CLI 实际读取工作区为 5 美元提醒、10 美元硬上限，用户接受同时影响旧项目。独立项目、一个服务和挂载 /app/data 的 500MB 卷已创建。资源 ID 与设置快照见 [railway-service-settings.json](railway-service-settings.json)，授权过程见 [预算记录](budget.md)。
 
-套餐和预算安排完成后，可继续通过连接器操作，无需为此重新登录 CLI；生产初始化凭据通过 Variables 设置。若选择 CLI 路径，再由用户运行：
+生产初始化凭据已由用户通过 Variables 设置。以后只有登录过期或换机器时才需要重新执行：
 
 ```powershell
 railway login
@@ -33,7 +33,7 @@ railway status
 
 关联前核对具体 workspace/account、project、environment、service，以及已确认的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。使用现已创建的独立项目，不要重复新建或关联到 autowealth-ai。
 
-GitHub 部署分支已推送；项目可创建后需确认 Railway 读取仓库的权限并绑定该分支。也可在确认目标后从本地上传部署当前 checkout；CLI 上传不是 GitHub 分支绑定。
+GitHub 部署分支已推送并绑定，当前 Railway 固定运行提交 `4e4519f2880c19a37032498e5fa141f9617d66dc`。后续文档提交不会自动改变该固定运行版本；发布代码前应核对目标 SHA 和待发布变更。CLI 上传不是 GitHub 分支绑定。
 
 ## 3. Railway 服务设置
 
@@ -49,6 +49,8 @@ Railway 持久卷仅在运行阶段挂载，并自动注入挂载路径变量；
 
 ## 4. 部署和上线检查
 
+当前已上线地址为 [Railway HTTPS](https://flow2api-production-d82c.up.railway.app)，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` 为 SUCCESS。Dockerfile 构建、1/1 容器运行、0.0.0.0:8000、/health、登录退出、管理员页面、API Key 与模型目录、卷内设置重启保留均已实际通过。HTTP 根路径 301 跳转到 HTTPS；socool.xin 仍待 DNS。详细证据见阶段报告。
+
 确认账号、目标、费用、Variables、Volume 以后，在指定分支执行：
 
 ```powershell
@@ -63,6 +65,8 @@ railway logs
 用实际 Railway HTTPS 域名先验收：将 PUBLIC_BASE_URL/CORS 配置为该域名，执行 `python scripts/check_deployment.py https://<实际域名>`。可通过本地 `FLOW2API_CHECK_API_KEY` 加入鉴权模型检查。不要照抄占位地址，也不要通过关闭 TLS 验证解决证书问题。
 
 浏览器验证登录→管理数据→保存设置→重新读取→退出；重启云端实例后重新登录并确认设置、Token、日志保留。内存会话重启失效属于预期。然后按 [DNS 指南](domain-dns.md) 绑定 socool.xin 并更新两个 URL 变量。
+
+本次用 `scripts/check_railway_authenticated.py` 实际执行管理/API 验收；该脚本在子进程内读取已授权 Railway 初始化变量，秘密不回显、不写状态文件。后台已轮换密码/Key 时，Variables 的旧初始化值不再代表当前 DB 凭据。重启演练需先用 `--prepare-restart --state tmp/<新文件>.json` 写入可恢复标记，获得本次重启授权并实际重启，然后以同一状态文件运行 `--verify-restart --wait-seconds 90`。脚本要求 PID 1 启动时间确实改变，验证设置后恢复原值；未重启时必须失败。不要覆盖或丢弃未完成的状态文件，也不要在未获授权时重启带卷服务。
 
 Railway 会按配置调用健康检查；本服务仅在必要初始化完成且数据库能进行写事务时返回 200，不要求先导入上游账号，也不会在健康检查中发起图片/视频请求。[Railway Healthchecks](https://docs.railway.com/deployments/healthchecks)
 
@@ -89,6 +93,6 @@ Railway 当前 HTTP 最长 15 分钟，持续无数据传输 5 分钟会关闭�
 
 在运行容器内可调用 `python /app/scripts/sqlite_backup.py /app/data/flow.db /app/data/backups/flow-<时间戳>.db`。命令中的时间戳需要实际替换，目标必须不存在。脚本运行 integrity_check，拒绝覆盖；容器备份仍在同一卷，应另行下载到受控的外部备份位置。
 
-恢复演练：在新路径/新卷恢复快照，单独启动隔离实例，检查登录、配置、行数、integrity_check。正式恢复先暂停写入并备份当前版本，由用户确认后切换到验证过的卷/数据库；保留原卷回滚，不直接覆盖活跃 flow.db 或删除 WAL/SHM。本次只在临时目录真实执行了快照和新路径恢复，没有触碰生产数据。
+恢复演练：在新路径/新卷恢复快照，单独启动隔离实例，检查登录、配置、行数、integrity_check。正式恢复先暂停写入并备份当前版本，由用户确认后切换到验证过的卷/数据库；保留原卷回滚，不直接覆盖活跃 flow.db 或删除 WAL/SHM。本次本地临时目录快照与新路径恢复通过；另已在云端创建 `/app/data/backups/flow-20261019-post-restart.db` 在线快照，integrity_check=ok，未替换生产数据库。该同卷快照不构成异地备份。
 
 SQLite Schema 迁移沿用已有增列/补表，缺行补齐，不覆盖已有设置。版本回滚可能不兼容新 Schema，先备份再部署。当前配置来源为 Railway 服务设置，Volume、域名和 Variables 需在目标服务实际确认；仓库快照用于复核。

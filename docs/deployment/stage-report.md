@@ -52,54 +52,57 @@ $env:PYTHONIOENCODING='utf-8'
 | 日志秘密检查 | PASS（测试范围） | 子进程日志未包含随机测试密码/Key/已记录的会话；没有执行真实上游日志审计 |
 | Railway 配置 | PASS（服务设置已核对） | 先前 schema 静态检查不能证明新服务支持旧 railway.json；平台明确拒绝该方式后已移除，通过连接器设置 Dockerfile/health/资源上限并读取验证 |
 | Compose 文件解析 | PASS（静态） | PyYAML 解析全部 4 文件；原文件不变，**没有运行 Compose** |
-| Docker build/run/重建/Volume | **BLOCKED** | `docker version` / `docker compose version` 命令不可用；check_docker.py 实际返回 2 / BLOCKED；没有镜像或容器验收成功记录 |
+| 本地 Docker build/run/重建/Volume | **BLOCKED** | `docker version` / `docker compose version` 命令不可用；check_docker.py 实际返回 2 / BLOCKED；云端 Dockerfile 构建和容器运行已另行通过，不代替本地 Compose 验收 |
 
 本地日志 `baseline-tests.log`、`regression-tests.log`、`deployment-tests.log`、`final-tests.log` 已被 .gitignore 排除，仅作为本机执行证据。数据库测试在临时目录，不是生产数据；没有测试遗留运行服务。
 
-仍有 Python 3.12 SQLite datetime adapter 和 Starlette/AnyIO 依赖的 DeprecationWarning，不影响本次通过结果。容器基于 Python 3.11，当前只能在 Windows Python 3.12 实测；Linux 镜像构建与运行必须补验。
+仍有 Python 3.12 SQLite datetime adapter 和 Starlette/AnyIO 依赖的 DeprecationWarning，不影响本次通过结果。本地测试运行于 Windows Python 3.12；Python 3.11 Linux 镜像已在 Railway 实际构建和运行，详见下节。
 
-## 阶段四：云端项目、服务与 Volume 已创建，等待秘密变量
+## 阶段四：Railway 部署与重启持久化通过
 
-已安装 CLI，首次版本输出 5.26.2。`railway whoami` 返回 OAuth invalid_grant / Unauthorized，status 无关联项目；只读查看过 up/domain/volume/login 实际帮助。
+CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，当前 CLI 和连接器均可用，目录已关联正确目标。账号为 `KevinYoung`（@kevinyoungsir），workspace 为 `KevinYoung's Projects`。旧项目 `eloquent-enchantment` 中的 autowealth-ai 未被替换、修改或重启。
 
-随后 Railway 连接器变为可用并成功授权：账号 `KevinYoung`（@kevinyoungsir），workspace `KevinYoung's Projects`；现有唯一项目 `eloquent-enchantment`（83e87226-36ca-497e-b230-f1d3cc676bec），production 环境（e0607769-04f8-47f9-9ab2-60bfe4fc16ac）。已只读盘点：其中只有连接 `KevinYoungsir/autowealth-ai@main` 的 autowealth-ai 服务、sfo 单副本、500MB 卷挂载 `/data/research_runs`，没有待发布变更。不是当前 Flow2API 仓库，不能替换它来部署本次代码。
+用户最初授权独立项目、一个应用服务和 /app/data 卷，月度上限 5 美元。CLI 恢复后核实平台拒绝 Compute 硬上限 5（最低 10，或特殊值 0）；用户随后明确同意 **最高 $10/月并继续部署**。实际读取工作区为 softLimit=5、hardLimit=10，用户接受同时影响旧项目。没有提高到超过授权金额。完整历史见 [budget.md](budget.md)。
 
-用户随后明确授权**新建独立 flow2api 项目、一个应用服务和 /app/data 持久卷，月度上限 5 美元**。已将通过测试的部署分支实际推送到 GitHub，最初代码提交 `330c7b258947528db9eea21a086b1458b0083d1f` 在远端可验证。
+已实际创建并读取核对：
 
-早先因试用到期与预算前置条件受阻。用户现已确认 **Hobby 已激活，Compute 硬上限已设为 $5，接受同时影响旧项目**，该前置条件已解决，不再重复询问。
+- [独立私有项目 flow2api](https://railway.com/project/a1ad9b63-e582-46b6-9c4a-4566a682c1f1)：`a1ad9b63-e582-46b6-9c4a-4566a682c1f1`。
+- production：`dcc6e47d-ac81-43a1-88d1-44695fea3bfa`；服务：`5a28a95f-7579-4595-8755-a9a1aeddb151`。
+- flow2api-data：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
+- Dockerfile builder，python main.py，`/health`，120 秒检查，单副本，不休眠，0.5 vCPU / 0.5GB 内存上限。
+- 已应用生产运行变量及用户手动设置的两个秘密变量；秘密值未回显、写入文件或提交。
+- 当前源码固定为 **`4e4519f2880c19a37032498e5fa141f9617d66dc`**，分支 deploy/railway-single-service。后续文档与验收脚本提交不会改变当前固定的运行版本。
+- [Railway HTTPS 地址](https://flow2api-production-d82c.up.railway.app)，目标端口 8000；PUBLIC_BASE_URL 暂用此地址，CORS 同时包含该地址和 https://socool.xin。
 
-已实际创建并通过 describe-service 读取核对：
+首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 **`743a372a-cd29-423a-b642-3ac7a02795b4` 为 SUCCESS**；2026-10-19 16:36:55（Asia/Shanghai）重启后日志确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示上述历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
 
-- 独立私有项目 flow2api：`a1ad9b63-e582-46b6-9c4a-4566a682c1f1`。
-- production 环境：`dcc6e47d-ac81-43a1-88d1-44695fea3bfa`。
-- flow2api 服务：`5a28a95f-7579-4595-8755-a9a1aeddb151`。
-- flow2api-data 卷：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
-- Dockerfile builder，启动 python main.py，/health，启动检查 120 秒，sfo 单副本，0.5 vCPU / 0.5GB 内存限制。
-- 已配置 9 个非秘密变量（包括 PORT=8000、生产模式、公开地址、CORS 和数据/缓存目录）。
-- Railway 地址：`https://flow2api-production-d82c.up.railway.app`，路由目标端口 8000；尚未以健康检查验收上线。
+| 云端检查 | 实际结果 |
+| --- | --- |
+| Dockerfile 构建、Linux 容器运行、Volume | PASS；SSH 确认 `/app/data/flow.db` 存在，122880 字节，数据/缓存目录可访问 |
+| HTTPS 与页面 | PASS；/health 200，首页和登录页 200；HTTP 根路径 301 到同地址 HTTPS |
+| 管理员及 API | PASS；正确登录、错误密码 401、Secure/HttpOnly/Lax Cookie、退出后会话撤销；manage/test/tokens/logs/stats 可读；正确 Key 返回非空模型目录，错误 Key 401 |
+| 设置保存与重启 | PASS；写入 error_ban_threshold 测试标记，独立读取 PID 1 启动时间；用户明确授权后重启同一部署，确认启动时间改变、设置仍在，然后恢复原值并重新读取 |
+| 重启校验反例 | PASS；未重启时运行验证，脚本明确拒绝认定重启。早先被审批拒绝重启后的标记读取已作废，不计入通过证据 |
+| 云端在线备份 | PASS；`/app/data/backups/flow-20261019-post-restart.db` 已创建，integrity_check=ok；备份在同一卷，不是异地备份，未覆盖活跃数据库 |
+| 静态图片与缓存 URL | PASS；实际赞助 PNG 200；本次专用空文件 /tmp URL 200，清理后 404；此项仅证明路由，不代表生成成功 |
+| 资源抽样 | 空闲内存约 0.065 GB，CPU 约 0.001 vCPU，磁盘约 0.033 GB；短时样本不能推算稳定月费 |
 
-平台拒绝新服务使用旧 railway.json，已根据当前官方说明改用服务设置；本仓库快照只用于审计，不会自动应用。CLI 的账号授权仍失效，但连接器能完成本次资源操作。
-
-当前等待用户在 Variables 设置 FLOW2API_ADMIN_PASSWORD 和 FLOW2API_API_KEY。已提供操作步骤，不索取秘密值。构建、运行、云端重启持久化仍待真正执行；资源创建不能标记部署成功。
+新增 `scripts/check_railway_authenticated.py` 通过 CLI 子进程内存读取初始化凭据，不把变量值传入命令行、输出或状态文件。重启状态文件只保存原/测试整数、目标 ID 和进程启动标记，位于被忽略的 tmp。生产库初始化后在后台轮换的密码/Key 不会被旧 Variables 覆盖；以后使用该脚本需注意其使用的是初始化变量。
 
 ## 阶段五：域名与 HTTPS 未验收
 
-已在新服务添加 socool.xin，实际路由目标为 `vz2fefnk.up.railway.app`，并取得 `_railway-verify.socool.xin` 的实际验证 TXT。完整记录已写入 [domain-dns.md](domain-dns.md)。Railway 返回证书状态 VALIDATING_OWNERSHIP，未声称归属验证或 HTTPS 已完成。
+已在新服务添加 socool.xin，实际路由目标为 `vz2fefnk.up.railway.app`，并取得 `_railway-verify.socool.xin` 的实际验证 TXT。完整记录和操作步骤见 [domain-dns.md](domain-dns.md)。重启验收后再次查询：verified=false，路由记录 requires update，证书仍为 VALIDATING_OWNERSHIP；因此 **根域名和其 HTTPS 尚未通过**。
 
-尚未修改阿里云 DNS，需保留原 MX/TXT。早前本地解析与 TLS 探测未成功（可能为本机合成解析/代理环境），不能据此断言全球 DNS 或证书状态。
-
-具体根域 ALIAS、MX/TXT 保留及验证步骤见 [domain-dns.md](domain-dns.md)。实际 Railway 记录、域名归属和证书状态仍待取得。
+尚未修改阿里云 DNS，已请用户按原要求介入并保留现有记录。阿里云 ALIAS 需要企业旗舰版或尊享版，不因本次部署购买升级；@ 无现有冲突记录时可添加实际 CNAME，有现有记录则先确认方案，不覆盖邮箱/验证记录、不更换 NS。DNS 和证书成功后才切换 PUBLIC_BASE_URL 到根域并补验。
 
 ## 阶段六：真实业务未验收
 
-真实 Google Flow 账号、必要登录态、权限和额度尚未配置。**真实图片生成：NOT RUN；真实视频生成：NOT RUN；生成结果可访问：NOT RUN；云端重启持久化：NOT RUN**。测试夹具、模型目录返回和健康检查均未被当作生成成功。
+云端启动日志显示 Total tokens: 0。真实 Google Flow 账号、必要登录态、权限和额度尚未配置。**真实图片生成：NOT RUN；真实视频生成：NOT RUN；生成结果可访问：NOT RUN**。云端重启持久化已通过，测试夹具、模型目录返回和健康检查均未被当作生成成功。
 
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
 
 ## 用户下一步
 
-1. 安装/启动可用 Docker Desktop Linux 容器引擎，以便真实补跑容器与 Compose 验收。
-2. 套餐、5 美元工作区硬上限及影响范围已经由用户确认，不再重复要求。使用 CLI 时才需要另行 railway login。
-3. 通过 Railway Variables 设置新库管理员密码和本服务 API Key；不在聊天发送秘密。
-4. 真实域名记录已取得；确认阿里云 ALIAS 能力和现有 DNS，再授权具体 DNS 修改。
-5. 在管理后台配置有权使用的上游账号与必要参数，确认额度消耗后再进行真实图片/视频验收。
+1. 按 DNS 指南在阿里云添加两条实际记录，存在 @ 记录时先报告类型并保留；完成后继续证书及根域验收。
+2. 在现有管理后台自行添加有权使用的上游账号和必要参数，不在聊天发送 Token/Cookie；准备好后确认真实图片/视频测试的额度消耗。
+3. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。
