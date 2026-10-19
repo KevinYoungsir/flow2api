@@ -71,10 +71,10 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 - flow2api-data：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
 - Dockerfile builder，python main.py，`/health`，120 秒检查，单副本，不休眠，0.5 vCPU / 0.5GB 内存上限。
 - 已应用生产运行变量及用户手动设置的两个秘密变量；秘密值未回显、写入文件或提交。
-- 当前源码固定为 **`4e4519f2880c19a37032498e5fa141f9617d66dc`**，分支 deploy/railway-single-service。后续文档与验收脚本提交不会改变当前固定的运行版本。
-- [Railway HTTPS 地址](https://flow2api-production-d82c.up.railway.app)，目标端口 8000；PUBLIC_BASE_URL 暂用此地址，CORS 同时包含该地址和 https://socool.xin。
+- 当前源码固定为 **`bb1cc904b65e9e7dfbc122a5e5b71b23e3a25609`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f。后续文档提交不会改变当前固定的运行版本。
+- 正式地址 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用，均指向 8000；PUBLIC_BASE_URL 为根域，CORS 同时包含两个地址。
 
-首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 **`743a372a-cd29-423a-b642-3ac7a02795b4` 为 SUCCESS**；2026-10-19 16:36:55（Asia/Shanghai）重启后日志确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示上述历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
+首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和当前 **`e935c3c0-3a93-47ce-8b43-393310052877`（SUCCESS，16:55:54）**。最新运行日志确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
 
 | 云端检查 | 实际结果 |
 | --- | --- |
@@ -96,6 +96,8 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 已仅发布 FLOW2API_PUBLIC_BASE_URL=https://socool.xin；既有 CORS 已含根域及 Railway 地址，无需改动。部署 `588caffd-9520-4252-b556-08707ab4e7ef` 为 SUCCESS、1/1 在线；根域上带真实 Origin 的登录/退出、安全 Cookie、管理与测试页、Token/日志/统计、正确/错误 API Key、模型目录均通过。发布前配置标记在新进程保留并恢复原值，额外验证了重新部署的 SQLite 持久化。
 
 根域验收发现管理后台 GET /api/cache/config 的 effective_base_url 忽略生产环境变量而显示 127.0.0.1；生成器本身已有环境优先级。已在真实 Uvicorn 集成测试加入 DB 保留旧本机地址的场景，修复前实际失败，修复为 PUBLIC_BASE_URL 优先后重跑全套测试。未改动前端或生成逻辑。
+
+修复提交 bb1cc904 已实际发布为 e935c3c0，根域验收脚本全部通过，包括有效缓存地址 https://socool.xin、携带根域 Origin 的登录/写配置、API 与重新部署后的 SQLite 标记保留；原测试设置已恢复。根域 HTTP → HTTPS 为 301；首页、登录页、health、实际赞助图均 200。根域 CORS 预检 200、非可信来源预检 400、非可信管理写请求 403。专用空文件 /tmp 路由返回 200，测试文件随后删除；仅证明路由，不是图片/视频生成结果。
 
 ## 阶段六：真实业务未验收
 

@@ -59,3 +59,5 @@ railway domain status socool.xin --service <确认后的服务> --environment <�
 本次证书经历 VALIDATING_OWNERSHIP → ISSUING → VALID，由平台后台自动完成，没有删除域名或反复请求证书。Railway 官方说明 DNS 更新后证书通常在一小时内签发；后续发生错误时应先核对实际状态，失败且平台提示可重试时再执行重试。[证书说明](https://docs.railway.com/networking/domains/working-with-domains#ssl-certificates)
 
 根域已经实际通过正确/错误管理员密码、Cookie 安全属性、管理与测试页、Token/日志/统计数据读取、正确/错误 API Key、非空模型目录、退出后会话撤销。公开地址配置发布为部署 `588caffd-9520-4252-b556-08707ab4e7ef`，状态 SUCCESS；发布前的 SQLite 配置标记在进程更换后仍在，已恢复原值。真实生成仍需上游账号，不能以这些检查代替。
+
+后续缓存有效地址显示修复已发布为部署 `e935c3c0-3a93-47ce-8b43-393310052877`（源码 bb1cc904，SUCCESS）。管理 API 实际返回的有效地址为 https://socool.xin，再次发布持久化检查通过，测试设置恢复原值。根域 HTTP 301 跳转至 HTTPS；首页、静态图片、缓存文件路由及可信/非可信来源校验均已实际检查。缓存测试文件已清理，真实媒体生成仍未执行。
