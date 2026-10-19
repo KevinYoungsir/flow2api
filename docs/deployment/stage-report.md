@@ -58,13 +58,17 @@ $env:PYTHONIOENCODING='utf-8'
 
 仍有 Python 3.12 SQLite datetime adapter 和 Starlette/AnyIO 依赖的 DeprecationWarning，不影响本次通过结果。容器基于 Python 3.11，当前只能在 Windows Python 3.12 实测；Linux 镜像构建与运行必须补验。
 
-## 阶段四：Railway 未部署
+## 阶段四：分支已推送，Railway 套餐阻塞
 
 已安装 CLI，首次版本输出 5.26.2。`railway whoami` 返回 OAuth invalid_grant / Unauthorized，status 无关联项目；只读查看过 up/domain/volume/login 实际帮助。
 
 随后 Railway 连接器变为可用并成功授权：账号 `KevinYoung`（@kevinyoungsir），workspace `KevinYoung's Projects`；现有唯一项目 `eloquent-enchantment`（83e87226-36ca-497e-b230-f1d3cc676bec），production 环境（e0607769-04f8-47f9-9ab2-60bfe4fc16ac）。已只读盘点：其中只有连接 `KevinYoungsir/autowealth-ai@main` 的 autowealth-ai 服务、sfo 单副本、500MB 卷挂载 `/data/research_runs`，没有待发布变更。不是当前 Flow2API 仓库，不能替换它来部署本次代码。
 
-没有执行 up、创建项目/服务/卷、上传代码、触发部署或设置真实 Variables。连接器可继续操作，CLI 登录不再是唯一途径；实际阻塞改为**用户确认部署目标、新增服务/卷费用及安全初始化凭据**。无法确认 Flow2API 云端端口、挂载、运行日志或健康检查。GitHub 远端未推送本分支。
+用户随后明确授权**新建独立 flow2api 项目、一个应用服务和 /app/data 持久卷，月度上限 5 美元**。已将通过测试的部署分支实际推送到 GitHub，最初代码提交 `330c7b258947528db9eea21a086b1458b0083d1f` 在远端可验证。
+
+已实际尝试创建私有 flow2api 项目，Railway 返回：`Your trial has expired. Please select a plan to continue using Railway.` 随后重新列举项目确认没有新建成功。没有创建服务/卷、触发构建部署或设置真实 Variables，无法确认 Flow2API 云端端口、挂载、运行日志或健康检查。
+
+当前阻塞是 **Railway 试用到期，需要用户在控制台激活套餐；5 美元硬预算需要明确工作区限额安排**。Hobby 每月 5 美元是最低消费而非封顶，硬限额影响整个工作区（含现有 autowealth-ai）。没有擅自订阅、改变工作区限额或影响旧项目。详见 [预算与授权记录](budget.md)。
 
 ## 阶段五：域名与 HTTPS 未验收
 
@@ -81,7 +85,7 @@ $env:PYTHONIOENCODING='utf-8'
 ## 用户下一步
 
 1. 安装/启动可用 Docker Desktop Linux 容器引擎，以便真实补跑容器与 Compose 验收。
-2. 确认在已连接账号下新建独立 Flow2API 项目，还是在 eloquent-enchantment 增加新服务；说明服务/卷可接受的费用上限。使用 CLI 时才需要另行 railway login。
+2. 部署目标和 5 美元月度上限已经确认；在 Railway 控制台激活适合该预算的套餐，并确认工作区限额及对旧项目的影响。使用 CLI 时才需要另行 railway login。
 3. 通过 Railway Variables 设置新库管理员密码和本服务 API Key；不在聊天发送秘密。
 4. 服务上线后取得真实域名记录，确认阿里云 ALIAS 能力和现有 DNS，再授权具体 DNS 修改。
 5. 在管理后台配置有权使用的上游账号与必要参数，确认额度消耗后再进行真实图片/视频验收。

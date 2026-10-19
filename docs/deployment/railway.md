@@ -20,7 +20,9 @@ python -m venv .venv
 
 本机 CLI 的 `railway whoami` 返回 Unauthorized / OAuth invalid_grant，`railway status` 没有关联项目。随后启用的 Railway 连接器已授权成功，识别为 `KevinYoung`（@kevinyoungsir）；唯一可见项目 `eloquent-enchantment` 的 production 环境已有不同仓库的 `autowealth-ai` 服务及持久卷，不是 Flow2API 部署目标。已只读盘点，没有改动该项目。
 
-可以继续通过连接器操作，无需为此重新登录 CLI；但必须先由用户确认是新建独立项目还是在既有项目增加服务、允许的资源费用，以及生产初始化凭据的设置方式。若选择 CLI 路径，再由用户运行：
+用户已确认新建独立 flow2api 项目、一个服务和 /app/data 卷，月度上限 5 美元，部署分支也已推送。连接器实际创建项目时返回试用已到期，需要用户先在控制台激活套餐；详见 [预算与授权记录](budget.md)。Hobby 的 5 美元不是费用封顶，工作区硬限额还会影响已有 autowealth-ai，不得未经确认变更。
+
+套餐和预算安排完成后，可继续通过连接器操作，无需为此重新登录 CLI；生产初始化凭据通过 Variables 设置。若选择 CLI 路径，再由用户运行：
 
 ```powershell
 railway login
@@ -29,9 +31,9 @@ railway link
 railway status
 ```
 
-关联前确认具体 workspace/account、project、environment、service，以及允许的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。本次没有创建资源或触发部署。
+关联前核对具体 workspace/account、project、environment、service，以及已确认的账单/资源额度。不要直接运行未关联的 `railway up -y`：本机 CLI 的帮助显示这可能自动创建项目和服务。当前新项目创建失败，尚未创建资源或触发部署。
 
-GitHub 自动部署需将本分支推送并授权 Railway 读取该仓库；本次只准备本地分支。也可在确认目标后从本地上传部署当前 checkout；CLI 上传不是 GitHub 分支绑定。
+GitHub 部署分支已推送；项目可创建后需确认 Railway 读取仓库的权限并绑定该分支。也可在确认目标后从本地上传部署当前 checkout；CLI 上传不是 GitHub 分支绑定。
 
 ## 3. Railway 服务设置
 
