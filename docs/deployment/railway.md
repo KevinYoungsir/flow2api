@@ -49,7 +49,7 @@ Railway 持久卷仅在运行阶段挂载，并自动注入挂载路径变量；
 
 ## 4. 部署和上线检查
 
-当前已上线地址为 [Railway HTTPS](https://flow2api-production-d82c.up.railway.app)，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` 为 SUCCESS。Dockerfile 构建、1/1 容器运行、0.0.0.0:8000、/health、登录退出、管理员页面、API Key 与模型目录、卷内设置重启保留均已实际通过。HTTP 根路径 301 跳转到 HTTPS；socool.xin 仍待 DNS。详细证据见阶段报告。
+当前正式地址为 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用。DNS 归属与证书 VALID 已确认，PUBLIC_BASE_URL 已切换至根域，CORS 包含两个地址。Dockerfile 构建、1/1 容器运行、0.0.0.0:8000、/health、根域登录退出、管理员页面、API Key 与模型目录、卷内设置重启及重新部署保留均已实际通过。详细证据见阶段报告。
 
 确认账号、目标、费用、Variables、Volume 以后，在指定分支执行：
 
@@ -67,6 +67,8 @@ railway logs
 浏览器验证登录→管理数据→保存设置→重新读取→退出；重启云端实例后重新登录并确认设置、Token、日志保留。内存会话重启失效属于预期。然后按 [DNS 指南](domain-dns.md) 绑定 socool.xin 并更新两个 URL 变量。
 
 本次用 `scripts/check_railway_authenticated.py` 实际执行管理/API 验收；该脚本在子进程内读取已授权 Railway 初始化变量，秘密不回显、不写状态文件。后台已轮换密码/Key 时，Variables 的旧初始化值不再代表当前 DB 凭据。重启演练需先用 `--prepare-restart --state tmp/<新文件>.json` 写入可恢复标记，获得本次重启授权并实际重启，然后以同一状态文件运行 `--verify-restart --wait-seconds 90`。脚本要求 PID 1 启动时间确实改变，验证设置后恢复原值；未重启时必须失败。不要覆盖或丢弃未完成的状态文件，也不要在未获授权时重启带卷服务。
+
+脚本的管理请求会携带被测地址的 Origin，实际验证生产来源校验。可用 `--expected-public-base-url https://socool.xin` 同时核对管理 API 显示的有效缓存地址。初始化后网页保存的旧 DB base_url 保留原值，但有效地址应优先使用生产 PUBLIC_BASE_URL。
 
 Railway 会按配置调用健康检查；本服务仅在必要初始化完成且数据库能进行写事务时返回 200，不要求先导入上游账号，也不会在健康检查中发起图片/视频请求。[Railway Healthchecks](https://docs.railway.com/deployments/healthchecks)
 

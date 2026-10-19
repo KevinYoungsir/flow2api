@@ -115,6 +115,15 @@ class DeploymentProcessTests(unittest.TestCase):
             self.assertEqual(self.client.get(page, headers=page_headers).status_code, 200)
         for endpoint in ("/api/tokens", "/api/logs", "/api/stats"):
             self.assertEqual(self.client.get(endpoint, headers=admin_headers).status_code, 200)
+        # A legacy DB address must not be displayed as effective when production
+        # supplies the public origin used by generated result URLs.
+        legacy_base = "http://127.0.0.1:8000"
+        self.assertEqual(self.client.post("/api/cache/config", headers=admin_headers,
+                                         json={"base_url": legacy_base}).status_code, 200)
+        cache_settings = self.client.get("/api/cache/config", headers=admin_headers)
+        self.assertEqual(cache_settings.status_code, 200)
+        self.assertEqual(cache_settings.json()["config"]["base_url"], legacy_base)
+        self.assertEqual(cache_settings.json()["config"]["effective_base_url"], "https://socool.xin")
         saved = self.client.post("/api/admin/config", headers=admin_headers, json={"error_ban_threshold": 7})
         self.assertEqual(saved.status_code, 200)
         self.assertEqual(self.client.get("/api/admin/config", headers=admin_headers).json()["error_ban_threshold"], 7)

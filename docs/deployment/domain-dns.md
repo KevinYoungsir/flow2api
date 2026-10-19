@@ -1,6 +1,6 @@
 # socool.xin 域名与 DNS
 
-已在独立 Railway flow2api 服务添加 socool.xin，取得以下实际记录；尚未修改阿里云 DNS。2026-10-19 云端重启验收后复查：verified=false，路由记录 REQUIRES_UPDATE，证书为 `CERTIFICATE_STATUS_TYPE_VALIDATING_OWNERSHIP`。Railway 自带 HTTPS 地址已经上线，根域名尚未上线。
+已在独立 Railway flow2api 服务添加 socool.xin。2026-10-19 用户确认已在阿里云添加两条记录，公网 DNS 实际查到 CNAME 和 TXT 均与要求一致。16:48（Asia/Shanghai）实际复查：Railway 路由 PROPAGATED、verified=true、证书 `CERTIFICATE_STATUS_TYPE_VALID`；正常 TLS 校验的 HTTPS /health 返回 200。随后已发布 PUBLIC_BASE_URL=https://socool.xin，CORS 保留根域和 Railway 备用地址。
 
 | 用途 | 阿里云主机记录 | Railway 实际要求值 |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ Railway 返回的路由类型是 CNAME。该 TXT 值用于公开 DNS 归属验�
 4. 添加类型 TXT、主机记录 `_railway-verify`、记录值为上表完整 `railway-verify=...`，默认线路、TTL 600 秒；主机记录不重复附加 socool.xin。
 5. 保存后通知部署人员，以 Railway 实际归属/证书状态与 HTTPS 请求继续验收。不要把 DNS 已保存等同于证书已生效。
 
-这是用户原要求亲自介入的 DNS 修改；本次没有使用阿里云账号、API 密钥或更换托管。普通 CNAME 方案是否适用取决于现有记录；无需先购买付费 DNS。
+用户已按以上步骤确认添加，部署人员通过公网查询核对记录。本次没有使用阿里云账号、API 密钥或更换托管，也没有购买付费 DNS。
 
 ## 获取真实记录
 
@@ -32,8 +32,8 @@ railway domain status socool.xin --service <确认后的服务> --environment <�
 
 | 类型 | 阿里云主机记录 | 值 | 当前状态 |
 | --- | --- | --- | --- |
-| 根域路由 CNAME（有冲突时另行确认） | @ | vz2fefnk.up.railway.app | 已取得，尚未修改 DNS |
-| 所有权 TXT | _railway-verify | 见上方完整值 | 已取得，Railway 尚未验证 |
+| 根域路由 CNAME | @ | vz2fefnk.up.railway.app | 公网匹配，Railway PROPAGATED |
+| 所有权 TXT | _railway-verify | 见上方完整值 | 公网匹配，Railway 归属验证通过 |
 | 其他额外验证记录 | 完全按 Railway 实际要求 | 当前未返回额外记录 | 无 |
 
 ## 阿里云根域名注意事项
@@ -55,3 +55,7 @@ railway domain status socool.xin --service <确认后的服务> --environment <�
 5. 实测登录/退出、管理数据读取保存、鉴权 `/v1/models`、上游生成和结果 URL；云端重启后再验证持久化。
 
 域名、HTTPS 证书、图片和视频均以实际验收结果记录，不以 DNS 刚保存或应用 /health 正常替代。
+
+本次证书经历 VALIDATING_OWNERSHIP → ISSUING → VALID，由平台后台自动完成，没有删除域名或反复请求证书。Railway 官方说明 DNS 更新后证书通常在一小时内签发；后续发生错误时应先核对实际状态，失败且平台提示可重试时再执行重试。[证书说明](https://docs.railway.com/networking/domains/working-with-domains#ssl-certificates)
+
+根域已经实际通过正确/错误管理员密码、Cookie 安全属性、管理与测试页、Token/日志/统计数据读取、正确/错误 API Key、非空模型目录、退出后会话撤销。公开地址配置发布为部署 `588caffd-9520-4252-b556-08707ab4e7ef`，状态 SUCCESS；发布前的 SQLite 配置标记在进程更换后仍在，已恢复原值。真实生成仍需上游账号，不能以这些检查代替。

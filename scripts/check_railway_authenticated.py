@@ -72,6 +72,7 @@ def main():
     mode.add_argument("--verify-restart", action="store_true")
     parser.add_argument("--state", type=Path)
     parser.add_argument("--wait-seconds", type=int, default=0, help="Wait for readiness during a rollout (0..300)")
+    parser.add_argument("--expected-public-base-url", help="Check the effective cache URL reported by the running app")
     args = parser.parse_args()
     if not 0 <= args.wait_seconds <= 300:
         parser.error("--wait-seconds must be 0..300")
@@ -80,6 +81,7 @@ def main():
     values = load_credentials(args)
     require(len(values["FLOW2API_API_KEY"].strip()) >= 32, "configured API key meets length requirement")
     with httpx.Client(base_url=args.base_url.rstrip("/"), trust_env=False,
+                      headers={"Origin": args.base_url.rstrip("/")},
                       timeout=30, follow_redirects=False) as client:
         deadline = time.monotonic() + args.wait_seconds
         while True:
@@ -102,6 +104,11 @@ def main():
         session = response.json()["token"]
         for endpoint in ("/manage", "/test", "/api/tokens", "/api/logs", "/api/stats"):
             require(client.get(endpoint).status_code == 200, "authenticated " + endpoint)
+        if args.expected_public_base_url:
+            cache_settings = client.get("/api/cache/config")
+            require(cache_settings.status_code == 200 and
+                    cache_settings.json()["config"]["effective_base_url"] == args.expected_public_base_url.rstrip("/"),
+                    "effective public cache URL")
         models = client.get("/v1/models", headers={"Authorization": "Bearer " + values["FLOW2API_API_KEY"]})
         require(models.status_code == 200 and bool(models.json().get("data")), "API key and nonempty model catalog")
         require(client.get("/v1/models", headers={"Authorization": "Bearer incorrect-deployment-check"}).status_code == 401, "incorrect API key rejected")

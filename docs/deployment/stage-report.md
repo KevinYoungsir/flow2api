@@ -12,7 +12,7 @@
 | --- | --- |
 | main.py、src/core/config.py | PORT 优先、生产 0.0.0.0、单 worker、运行变量校验；明确 DB/初始化变量/TOML 优先级；缺安全配置失败；生产禁详细 debug 和访问日志 |
 | src/core/database.py、auth.py | 迁移前读取校验既有凭据；保留 DB 配置；管理员密码兼容 bcrypt 迁移；常量时间比较；实际 SQLite 读写就绪探测 |
-| src/api/admin.py、src/main.py | Secure/HttpOnly/Lax Cookie、会话 TTL/撤销、生产管理来源限制；/health 只公开状态并正确返回 503；metrics 鉴权；生产关闭 API 文档 |
+| src/api/admin.py、src/main.py | Secure/HttpOnly/Lax Cookie、会话 TTL/撤销、生产管理来源限制；/health 只公开状态并正确返回 503；metrics 鉴权；生产关闭 API 文档；缓存有效地址显示遵守 PUBLIC_BASE_URL 优先级 |
 | src/api/routes.py、services/file_cache.py、generation_handler.py | 公开 URL 优先环境配置，统一 TMP_DIR 和静态路径；生成器仅改缓存目录一行，没有修改核心生成逻辑 |
 | Dockerfile、.dockerignore、.gitignore、服务设置快照 | 保留现有镜像启动方式；补齐状态/秘密排除；/health、单副本、不休眠和失败重试配置。云端发现旧 Config as Code 被新服务拒绝，已移除本次添加的根 railway.json，使用服务设置并读取核对 |
 | requirements.txt | 补 Pillow（现有代码与测试使用） |
@@ -36,7 +36,7 @@ $env:PYTHONIOENCODING='utf-8'
 | 检查 | 结果 | 证据/范围 |
 | --- | --- | --- |
 | Python 编译 | PASS | main/src/scripts/tests，实际执行 |
-| 全部单元与集成测试 | PASS | **185 tests，0 failures，0 errors**；最终一次 28.030 秒，原有 170 + 新增 15 |
+| 全部单元与集成测试 | PASS | **185 tests，0 failures，0 errors**；缓存有效地址修复后最终一次 38.235 秒，原有 170 + 新增 15，并补充既有进程测试断言 |
 | 依赖一致性 | PASS | pip check：No broken requirements found |
 | HTTP 启动与 PORT | PASS（本地） | 独立 Uvicorn 子进程，临时端口、与源码不同 cwd，配置为 production |
 | 登录/退出/改密码 | PASS（本地） | 错密码 401、正确登录、会话撤销、旧密码失效、bcrypt 存储 |
@@ -89,11 +89,13 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 新增 `scripts/check_railway_authenticated.py` 通过 CLI 子进程内存读取初始化凭据，不把变量值传入命令行、输出或状态文件。重启状态文件只保存原/测试整数、目标 ID 和进程启动标记，位于被忽略的 tmp。生产库初始化后在后台轮换的密码/Key 不会被旧 Variables 覆盖；以后使用该脚本需注意其使用的是初始化变量。
 
-## 阶段五：域名与 HTTPS 未验收
+## 阶段五：根域名、HTTPS 和管理/API 已通过
 
-已在新服务添加 socool.xin，实际路由目标为 `vz2fefnk.up.railway.app`，并取得 `_railway-verify.socool.xin` 的实际验证 TXT。完整记录和操作步骤见 [domain-dns.md](domain-dns.md)。重启验收后再次查询：verified=false，路由记录 requires update，证书仍为 VALIDATING_OWNERSHIP；因此 **根域名和其 HTTPS 尚未通过**。
+用户在阿里云添加实际 CNAME/TXT 后，公网查询两条记录完全匹配。Railway 从 VALIDATING_OWNERSHIP 转为 ISSUING，16:48（Asia/Shanghai）确认 **verified=true、证书 VALID、路由 PROPAGATED**，HTTPS /health 实际 200；没有忽略 TLS 错误。完整记录见 [domain-dns.md](domain-dns.md)。
 
-尚未修改阿里云 DNS，已请用户按原要求介入并保留现有记录。阿里云 ALIAS 需要企业旗舰版或尊享版，不因本次部署购买升级；@ 无现有冲突记录时可添加实际 CNAME，有现有记录则先确认方案，不覆盖邮箱/验证记录、不更换 NS。DNS 和证书成功后才切换 PUBLIC_BASE_URL 到根域并补验。
+已仅发布 FLOW2API_PUBLIC_BASE_URL=https://socool.xin；既有 CORS 已含根域及 Railway 地址，无需改动。部署 `588caffd-9520-4252-b556-08707ab4e7ef` 为 SUCCESS、1/1 在线；根域上带真实 Origin 的登录/退出、安全 Cookie、管理与测试页、Token/日志/统计、正确/错误 API Key、模型目录均通过。发布前配置标记在新进程保留并恢复原值，额外验证了重新部署的 SQLite 持久化。
+
+根域验收发现管理后台 GET /api/cache/config 的 effective_base_url 忽略生产环境变量而显示 127.0.0.1；生成器本身已有环境优先级。已在真实 Uvicorn 集成测试加入 DB 保留旧本机地址的场景，修复前实际失败，修复为 PUBLIC_BASE_URL 优先后重跑全套测试。未改动前端或生成逻辑。
 
 ## 阶段六：真实业务未验收
 
@@ -103,6 +105,5 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 ## 用户下一步
 
-1. 按 DNS 指南在阿里云添加两条实际记录，存在 @ 记录时先报告类型并保留；完成后继续证书及根域验收。
-2. 在现有管理后台自行添加有权使用的上游账号和必要参数，不在聊天发送 Token/Cookie；准备好后确认真实图片/视频测试的额度消耗。
-3. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。
+1. 在 https://socool.xin 的现有管理后台自行添加有权使用的上游账号和必要参数，不在聊天发送 Token/Cookie；准备好后继续真实图片/视频验收。DNS 无需重复修改。
+2. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。

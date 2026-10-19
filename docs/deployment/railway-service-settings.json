@@ -30,5 +30,9 @@
     "railway": "flow2api-production-d82c.up.railway.app",
     "custom": "socool.xin",
     "targetPort": 8000
+  },
+  "publicUrls": {
+    "FLOW2API_PUBLIC_BASE_URL": "https://socool.xin",
+    "FLOW2API_CORS_ORIGINS": "https://flow2api-production-d82c.up.railway.app,https://socool.xin"
   }
 }
