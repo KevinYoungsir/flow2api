@@ -36,7 +36,7 @@ $env:PYTHONIOENCODING='utf-8'
 | 检查 | 结果 | 证据/范围 |
 | --- | --- | --- |
 | Python 编译 | PASS | main/src/scripts/tests，实际执行 |
-| 全部单元与集成测试 | PASS | **185 tests，0 failures，0 errors**；缓存有效地址修复后最终一次 38.235 秒，原有 170 + 新增 15，并补充既有进程测试断言 |
+| 全部单元与集成测试 | PASS | **189 tests，0 failures，0 errors**；插件来源修复后最终一次 27.000 秒，原有 170 + 新增 19，并补充既有进程测试断言 |
 | 依赖一致性 | PASS | pip check：No broken requirements found |
 | HTTP 启动与 PORT | PASS（本地） | 独立 Uvicorn 子进程，临时端口、与源码不同 cwd，配置为 production |
 | 登录/退出/改密码 | PASS（本地） | 错密码 401、正确登录、会话撤销、旧密码失效、bcrypt 存储 |
@@ -104,6 +104,8 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 云端启动日志显示 Total tokens: 0。真实 Google Flow 账号、必要登录态、权限和额度尚未配置。**真实图片生成：NOT RUN；真实视频生成：NOT RUN；生成结果可访问：NOT RUN**。云端重启持久化已通过，测试夹具、模型目录返回和健康检查均未被当作生成成功。
 
 用户随后授权各执行一次真实图片和视频生成。2026-10-19 17:06（Asia/Shanghai）调用前预检：正式域名与 Railway 备用域名的管理员登录均成功，GET /api/tokens 均为 HTTP 200 且返回空数组，账号总数和启用数均为 0；不是鉴权错误或两域名数据不同。未提交生成请求，以上真实生成项目继续为 NOT RUN。已请用户在正式后台保存上游账号并确认列表出现启用记录；不在聊天接收 Token/Cookie/密码。
+
+用户随后提供 Chrome Token Updater 的 `403: Untrusted request origin`。已核对配套插件源码：后台同步通过 Authorization Bearer 独立连接令牌调用 /api/plugin/update-token。部署新增的通用管理来源保护在该专用鉴权之前拦截了扩展 Origin。修复只让 POST /api/plugin/update-token 与 POST /api/plugin/check-tokens 进入其既有独立连接令牌鉴权，不改变其他管理写接口来源校验或 HTTPS CORS 白名单。4 项新增 HTTP 回归测试在修复前真实失败，修复后全套 189 项通过；覆盖正确/错误/缺失插件令牌、管理员 Cookie 不能代替插件令牌、非插件管理写接口继续 403，受控上游校验异常与真实生成结果严格区分。
 
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
 

@@ -298,9 +298,15 @@ app.add_middleware(
 
 @app.middleware("http")
 async def production_request_guard(request: Request, call_next):
-    # Browser requests to admin endpoints must originate from an explicit trusted origin.
+    # These exact POST routes require an independent plugin Authorization token;
+    # an ambient admin cookie never authenticates them. Chrome's updater sends
+    # its own Origin, so let the route enforce that token instead of Cookie CSRF.
+    plugin_token_request = request.method == "POST" and request.url.path in {
+        "/api/plugin/update-token", "/api/plugin/check-tokens",
+    }
+    # Cookie-authenticated admin writes still require an explicit trusted origin.
     # CLI/header clients without Origin remain supported.
-    if config.production and request.url.path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+    if config.production and not plugin_token_request and request.url.path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
         origin = request.headers.get("origin")
         if origin and origin not in config.cors_origins:
             return JSONResponse({"detail": "Untrusted request origin"}, status_code=403)

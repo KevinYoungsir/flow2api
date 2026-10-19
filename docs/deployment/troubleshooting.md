@@ -13,6 +13,7 @@
 | 登录成功但无法打开管理页面 | 公网必须 HTTPS；生产 Cookie Secure/HttpOnly/Lax；不能用 HTTP 调试公网生产登录；检查浏览器 Cookie、Origin 白名单、会话是否过期 |
 | 重启后需要重新登录 | 内存会话正常失效；DB 中管理员设置/Token 应仍保留。重启后设置也丢失才检查 Volume |
 | 403 Untrusted request origin / CORS | 填精确 HTTPS origin；不要包含路径、通配或错误端口；反代应保留浏览器 Origin；同源前端无需改为独立站点 |
+| Chrome Token Updater 同步报 403 Untrusted request origin | 插件使用独立连接令牌，部署修复将两个专用 POST 同步端点交给既有 Bearer 鉴权；管理接口仍校验来源。接口填 https://socool.xin/api/plugin/update-token，连接令牌从后台插件配置复制；无需放宽 CORS。升级修复版后在插件点击立即同步，401 时核对插件连接令牌，400 时查看上游登录态验证提示 |
 | 修改密码后旧会话 401 | 预期：所有管理员会话撤销，重新登录 |
 | /metrics 或 /docs 未公开 | metrics 需要管理员会话，docs/openapi 在生产关闭；health 保持公开 |
 | /tmp 链接 404 | 缓存启用吗、文件已过期或容器重建了吗；PUBLIC_BASE_URL 是否为实际域名；文件目录和静态挂载均用 TMP_DIR；不要返回 Windows 路径 |

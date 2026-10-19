@@ -41,3 +41,5 @@
 上游账号、其他供应商配置通过现有管理后台保存；本次不新增绕过上游访问控制的机制，也没有为所有 TOML 字段提供任意环境映射。生产始终关闭详细 debug，管理端尝试开启会返回 400；Uvicorn 访问日志关闭以避免 key 查询参数进入应用日志。客户端优先使用 Authorization，避免 URL 传 Key。
 
 验收脚本可选 `FLOW2API_CHECK_API_KEY` 仅供本地只读检查使用，不是服务运行变量。不要在公共流水线输出环境变量。
+
+Chrome Token Updater 的连接地址是 `https://socool.xin/api/plugin/update-token`，连接令牌在管理后台的插件配置中单独管理。POST `/api/plugin/update-token` 与 `/api/plugin/check-tokens` 始终验证独立 Authorization 连接令牌，管理员 Cookie 不能替代；它们不依靠管理 Cookie 的 Origin 防护。其他管理写接口继续使用明确来源白名单，不为插件同步添加 CORS 通配符。
