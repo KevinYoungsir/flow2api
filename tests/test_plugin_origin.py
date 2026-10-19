@@ -1,6 +1,7 @@
 """Production CSRF boundaries for the header-authenticated Chrome updater."""
 
 import os
+import json
 import secrets
 import time
 import unittest
@@ -37,6 +38,9 @@ class PluginOriginTests(unittest.TestCase):
         token_rows = patch.object(admin.db, "get_all_tokens_with_stats", AsyncMock(return_value=[]))
         token_rows.start()
         self.addCleanup(token_rows.stop)
+        saved_account = patch.object(admin.db, "get_token_by_email", AsyncMock(return_value=None))
+        saved_account.start()
+        self.addCleanup(saved_account.stop)
         # No lifespan or real upstream calls; this suite tests the HTTP/auth boundary.
         self.client = TestClient(app, base_url="https://socool.xin")
         self.addCleanup(self.client.close)
@@ -88,6 +92,62 @@ class PluginOriginTests(unittest.TestCase):
         self.assertEqual(self.client.options("/api/plugin/update-token", headers={
             "Origin": "https://untrusted.example", "Access-Control-Request-Method": "POST",
         }).status_code, 400)
+
+    def test_failed_sync_compares_saved_session_without_values_or_writes(self):
+        saved = json.dumps([
+            {"name": "OSID", "value": "private-saved-session", "domain": "flow.google.com"},
+            {"name": "SID", "value": "private-google-session", "domain": ".google.com"},
+        ])
+        incoming = json.dumps([
+            {"name": "OSID", "value": "private-uploaded-session", "domain": "flow.google.com"},
+        ])
+        with patch.object(admin.db, "get_token_by_email", AsyncMock(
+            return_value=SimpleNamespace(google_cookies=saved)
+        )), patch.object(admin.token_manager.flow_client, "st_to_at", AsyncMock(
+            side_effect=RuntimeError("Flow authentication rejected (rpc=nzlxg, code=401)")
+        )), patch.object(admin.token_manager, "update_token", AsyncMock()) as update, \
+             patch.object(admin.token_manager, "add_token", AsyncMock()) as add:
+            response = self.client.post("/api/plugin/update-token", json={
+                **self.payload, "google_cookies": incoming,
+            }, headers={"Origin": self.origin, "Authorization": "Bearer " + self.connection_token})
+        self.assertEqual(response.status_code, 400)
+        detail = response.json()["detail"]
+        self.assertIn("stored_session=different", detail)
+        self.assertIn("auth_values=different", detail)
+        self.assertIn("missing_auth=1", detail)
+        for secret in ("private-saved-session", "private-uploaded-session", "private-google-session",
+                       self.payload["login_account"], self.connection_token):
+            self.assertNotIn(secret, response.text)
+        update.assert_not_awaited()
+        add.assert_not_awaited()
+
+    def test_session_comparison_respects_scope_and_ignores_json_format(self):
+        cookies = [
+            {"name": "OSID", "value": "private-value", "domain": "flow.google.com", "path": "/"},
+            {"name": "SID", "value": "private-parent", "domain": ".google.com", "path": "/"},
+        ]
+        stored = SimpleNamespace(google_cookies=json.dumps(cookies))
+        compact = json.dumps(cookies, separators=(",", ":"))
+        same = admin._plugin_session_comparison(stored, compact)
+        self.assertIn("stored_session=same", same)
+        self.assertIn("auth_values=same", same)
+        cookies[0]["path"] = "/other"
+        scoped = admin._plugin_session_comparison(stored, json.dumps(cookies))
+        self.assertIn("stored_session=different", scoped)
+        self.assertIn("missing_auth=1", scoped)
+
+    def test_diagnostic_lookup_failure_preserves_upstream_rejection(self):
+        with patch.object(admin.db, "get_token_by_email", AsyncMock(
+            side_effect=RuntimeError("private database details")
+        )), patch.object(admin.token_manager.flow_client, "st_to_at", AsyncMock(
+            side_effect=RuntimeError("Flow authentication rejected (rpc=nzlxg, code=401)")
+        )):
+            response = self.client.post("/api/plugin/update-token", json=self.payload,
+                headers={"Origin": self.origin, "Authorization": "Bearer " + self.connection_token})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("code=401", response.json()["detail"])
+        self.assertIn("stored_session=unknown", response.json()["detail"])
+        self.assertNotIn("private database details", response.text)
 
 
 if __name__ == "__main__":

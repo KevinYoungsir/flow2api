@@ -5,6 +5,7 @@ import hashlib
 import importlib
 import sys
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, Response
 from fastapi.responses import JSONResponse
@@ -35,6 +36,11 @@ from ..core.browser_runtime_status import (
 from ..services.token_manager import TokenManager
 from ..services.proxy_manager import ProxyManager
 from ..services.concurrency_manager import ConcurrencyManager
+from ..services.browser_cookie_utils import (
+    FLOW_SESSION_COOKIE_NAMES,
+    GOOGLE_ACCOUNT_COOKIE_NAMES,
+    cookie_pairs_for_url,
+)
 
 try:
     import httpx
@@ -2673,6 +2679,32 @@ async def update_plugin_config(request: dict, token: str = Depends(verify_admin_
     }
 
 
+def _plugin_session_comparison(saved_token: Optional[Token], incoming: str) -> str:
+    """Describe an authenticated failed upload without emitting session values."""
+    saved = str(getattr(saved_token, "google_cookies", "") or "")
+    if not saved:
+        return " [stored_session=missing]"
+    urls = (
+        "https://flow.google.com/projects",
+        "https://flow.google.com/_/AiSandboxAngularFrontend/data/batchexecute",
+    )
+    saved_pairs = [cookie_pairs_for_url(saved, url) for url in urls]
+    incoming_pairs = [cookie_pairs_for_url(incoming, url) for url in urls]
+    same = saved_pairs == incoming_pairs
+    auth_names = FLOW_SESSION_COOKIE_NAMES | GOOGLE_ACCOUNT_COOKIE_NAMES
+    saved_auth = Counter((name, value) for name, value in saved_pairs[-1] if name in auth_names)
+    incoming_auth = Counter((name, value) for name, value in incoming_pairs[-1] if name in auth_names)
+    saved_names = Counter(name for name, _ in saved_pairs[-1] if name in auth_names)
+    incoming_names = Counter(name for name, _ in incoming_pairs[-1] if name in auth_names)
+    # Only comparisons and counts leave this function; values remain in RAM.
+    return (
+        f" [stored_session={'same' if same else 'different'}; "
+        f"auth_values={'same' if saved_auth == incoming_auth else 'different'}; "
+        f"missing_auth={sum((saved_names - incoming_names).values())}; "
+        f"extra_auth={sum((incoming_names - saved_names).values())}]"
+    )
+
+
 @router.post("/api/plugin/update-token")
 async def plugin_update_token(
     request: PluginTokenUpdateRequest,
@@ -2699,9 +2731,17 @@ async def plugin_update_token(
             except (TypeError, ValueError):
                 pass
     except Exception as cookie_error:
+        comparison = ""
+        if "rpc=nzlxg, code=401" in str(cookie_error):
+            try:
+                saved_token = await db.get_token_by_email(email)
+                comparison = _plugin_session_comparison(saved_token, google_cookies)
+            except Exception:
+                # Diagnostics must not hide the rejection or expose DB errors.
+                comparison = " [stored_session=unknown]"
         raise HTTPException(
             status_code=400,
-            detail=f"Google Cookie 验证失败：{str(cookie_error)}",
+            detail=f"Google Cookie 验证失败：{str(cookie_error)}{comparison}",
         ) from cookie_error
 
     cookie_hash = hashlib.sha256(google_cookies.encode("utf-8")).hexdigest()[:32]
