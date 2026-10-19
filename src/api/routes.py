@@ -21,6 +21,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from ..core.auth import AuthManager, verify_api_key_flexible
+from ..core.config import config
 from ..core.logger import debug_logger
 from ..core.model_resolver import get_base_model_aliases, resolve_model_name
 from ..core.models import (
@@ -430,6 +431,8 @@ def _resolve_request_model(
 
 def _get_request_base_url(request: Request) -> Optional[str]:
     """根据实际请求头推导对外可访问的基础地址。"""
+    if config.public_base_url:
+        return config.public_base_url
     forwarded_proto = (
         (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip()
     )

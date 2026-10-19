@@ -4,6 +4,7 @@ import os
 import tomli
 from pathlib import Path
 from typing import Dict, Any, Optional
+from urllib.parse import urlsplit
 
 DEFAULT_YESCAPTCHA_TASK_TYPE = "RecaptchaV3TaskProxylessM1S9"
 YESCAPTCHA_TASK_TYPE_OPTIONS = {
@@ -55,7 +56,96 @@ class Config:
             )
 
         with open(config_path, "rb") as f:
-            return tomli.load(f)
+            loaded = tomli.load(f)
+
+        # Bootstrap values only: existing database rows remain authoritative.
+        for env_name, section, key, parser in (
+            ("FLOW2API_ADMIN_USERNAME", "global", "admin_username", str),
+            ("FLOW2API_ADMIN_PASSWORD", "global", "admin_password", str),
+            ("FLOW2API_API_KEY", "global", "api_key", str),
+            ("FLOW2API_CACHE_ENABLED", "cache", "enabled", self._parse_bool),
+            ("FLOW2API_CACHE_TIMEOUT", "cache", "timeout", int),
+            ("FLOW2API_IMAGE_TIMEOUT", "generation", "image_timeout", int),
+            ("FLOW2API_VIDEO_TIMEOUT", "generation", "video_timeout", int),
+        ):
+            if env_name in os.environ:
+                try:
+                    loaded.setdefault(section, {})[key] = parser(os.environ[env_name])
+                except ValueError:
+                    raise ValueError(f"Invalid {env_name}") from None
+                if parser is int and loaded[section][key] < (0 if section == "cache" else 1):
+                    raise ValueError(f"Invalid {env_name}: value out of range")
+        return loaded
+
+    @staticmethod
+    def _parse_bool(value: str) -> bool:
+        if value.lower() not in {"true", "false", "1", "0"}:
+            raise ValueError("Expected true/false or 1/0")
+        return value.lower() in {"true", "1"}
+
+    @property
+    def production(self) -> bool:
+        return bool(os.getenv("RAILWAY_PROJECT_ID") or os.getenv("RAILWAY_ENVIRONMENT_ID")) or os.getenv(
+            "FLOW2API_ENV", "development"
+        ).lower() == "production"
+
+    @property
+    def public_base_url(self) -> str:
+        return os.getenv("FLOW2API_PUBLIC_BASE_URL", "").strip().rstrip("/")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [s.strip().rstrip("/") for s in os.getenv("FLOW2API_CORS_ORIGINS", "").split(",") if s.strip()]
+
+    @property
+    def data_dir(self) -> Path:
+        return Path(os.getenv("FLOW2API_DATA_DIR", str(Path(__file__).resolve().parents[2] / "data"))).resolve()
+
+    @property
+    def tmp_dir(self) -> Path:
+        return Path(os.getenv("FLOW2API_TMP_DIR", str(Path(__file__).resolve().parents[2] / "tmp"))).resolve()
+
+    @property
+    def session_ttl(self) -> int:
+        value = int(os.getenv("FLOW2API_SESSION_TTL_SECONDS", "43200"))
+        if not 60 <= value <= 604800:
+            raise ValueError("FLOW2API_SESSION_TTL_SECONDS must be 60..604800")
+        return value
+
+    def validate_runtime(self):
+        # Evaluate early so bad PORT/TTL fails before the database is touched.
+        if os.getenv("FLOW2API_ENV", "development").lower() not in {"development", "production"}:
+            raise ValueError("FLOW2API_ENV must be development or production")
+        self.server_port
+        self.session_ttl
+        for origin in self.cors_origins + ([self.public_base_url] if self.public_base_url else []):
+            parsed = urlsplit(origin)
+            if (parsed.scheme not in ({"https"} if self.production else {"http", "https"})
+                    or not parsed.hostname or parsed.username or parsed.password
+                    or parsed.path or parsed.query or parsed.fragment or "*" in origin):
+                raise ValueError("Public URL and CORS origins must be explicit origins (HTTPS in production)")
+        if self.production and (not self.public_base_url or self.public_base_url not in self.cors_origins):
+            raise ValueError("Production requires FLOW2API_PUBLIC_BASE_URL and matching FLOW2API_CORS_ORIGINS")
+        if os.getenv("RAILWAY_PROJECT_ID") or os.getenv("RAILWAY_ENVIRONMENT_ID"):
+            volume_path = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "")
+            if not volume_path or Path(volume_path).resolve() != self.data_dir:
+                raise ValueError("Railway requires a Volume mounted at FLOW2API_DATA_DIR (default /app/data)")
+
+    def validate_credentials(self, username: str, password: str, api_key: str, *, stored: bool = False):
+        if not self.production:
+            return
+        from .auth import AuthManager
+        if not username or not username.strip():
+            raise ValueError("Production requires an admin username")
+        if stored and AuthManager.is_password_hash(password):
+            if any(AuthManager.verify_password(weak, password) for weak in ("admin", "password", "changeme")):
+                raise ValueError("Production database contains an example admin password")
+        elif not (16 <= len(password) and len(password.encode("utf-8")) <= 72) or password.lower() in {
+            "change-me-before-deploy", "replace-with-a-secure-password"
+        }:
+            raise ValueError("Production requires an admin password of at least 16 characters (at most 72 UTF-8 bytes)")
+        if len(api_key.strip()) < 32 or api_key.lower() in {"replace-with-a-random-api-key-32chars", "change-me-before-deploy"}:
+            raise ValueError("Production requires an API key of at least 32 characters")
 
     def reload_config(self):
         """Reload configuration from file"""
@@ -240,15 +330,23 @@ class Config:
 
     @property
     def server_host(self) -> str:
+        if self.production or "PORT" in os.environ:
+            return "0.0.0.0"
         return self._config["server"]["host"]
 
     @property
     def server_port(self) -> int:
-        return self._config["server"]["port"]
+        try:
+            port = int(os.environ.get("PORT", self._config["server"]["port"]))
+            if not 1 <= port <= 65535:
+                raise ValueError
+            return port
+        except (ValueError, TypeError):
+            raise ValueError("PORT must be an integer from 1 to 65535") from None
 
     @property
     def debug_enabled(self) -> bool:
-        return self._config.get("debug", {}).get("enabled", False)
+        return not self.production and self._config.get("debug", {}).get("enabled", False)
 
     @property
     def debug_log_requests(self) -> bool:
@@ -380,7 +478,7 @@ class Config:
     @property
     def cache_base_url(self) -> str:
         """Get cache base URL"""
-        return self._config.get("cache", {}).get("base_url", "")
+        return self.public_base_url or self._config.get("cache", {}).get("base_url", "")
 
     def set_cache_base_url(self, base_url: str):
         """Set cache base URL"""

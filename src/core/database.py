@@ -32,8 +32,9 @@ class Database:
     def __init__(self, db_path: str = None):
         if db_path is None:
             # Store database in data directory
-            data_dir = Path(__file__).parent.parent.parent / "data"
-            data_dir.mkdir(exist_ok=True)
+            from .config import config
+            data_dir = config.data_dir
+            data_dir.mkdir(parents=True, exist_ok=True)
             db_path = str(data_dir / "flow.db")
         self.db_path = db_path
         self._write_lock = asyncio.Lock()
@@ -43,6 +44,45 @@ class Database:
     def db_exists(self) -> bool:
         """Check if database file exists"""
         return Path(self.db_path).exists()
+
+    async def validate_startup_credentials(self, settings):
+        """Read persisted credentials before migrations; never replace existing secrets from env."""
+        if not settings.production:
+            return
+        values = None
+        if self.db_exists():
+            uri = Path(self.db_path).resolve().as_uri() + "?mode=ro"
+            async with aiosqlite.connect(uri, uri=True) as connection:
+                if await self._table_exists(connection, "admin_config"):
+                    cursor = await connection.execute("SELECT username, password, api_key FROM admin_config WHERE id = 1")
+                    values = await cursor.fetchone()
+        if values:
+            settings.validate_credentials(*values, stored=True)
+        else:
+            initial = settings.get_raw_config().get("global", {})
+            settings.validate_credentials(initial.get("admin_username", ""), initial.get("admin_password", ""), initial.get("api_key", ""))
+
+    async def hash_legacy_admin_password(self):
+        from .auth import AuthManager
+        admin = await self.get_admin_config()
+        if admin and not AuthManager.is_password_hash(admin.password):
+            hashed = await asyncio.to_thread(AuthManager.hash_password, admin.password)
+            await self.update_admin_config(password=hashed)
+
+    async def check_ready(self):
+        """Check the actual schema and write path without creating a missing database."""
+        uri = Path(self.db_path).resolve().as_uri() + "?mode=rw"
+        async with aiosqlite.connect(uri, uri=True, timeout=2) as connection:
+            await connection.execute("PRAGMA busy_timeout = 2000")
+            await connection.execute("BEGIN IMMEDIATE")
+            try:
+                cursor = await connection.execute("SELECT id FROM admin_config WHERE id = 1")
+                if await cursor.fetchone() is None:
+                    raise RuntimeError("Database initialization incomplete")
+                # Exercise a real (unchanged) write, including SQLite's journal path.
+                await connection.execute("UPDATE admin_config SET id = id WHERE id = 1")
+            finally:
+                await connection.rollback()
 
     async def _configure_connection(self, db):
         """Apply SQLite runtime settings for better concurrent behavior."""

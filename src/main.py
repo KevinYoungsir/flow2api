@@ -5,8 +5,8 @@ import os
 import sys
 import warnings
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse, Response, RedirectResponse
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import HTMLResponse, FileResponse, Response, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -92,6 +92,10 @@ _configure_process_runtime()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
+    app.state.ready = False
+    admin.active_admin_tokens.clear()
+    config.validate_runtime()
+    await db.validate_startup_credentials(config)
     # Startup
     print("=" * 60)
     print("Flow2API Starting...")
@@ -119,7 +123,10 @@ async def lifespan(app: FastAPI):
         print("Database migration check completed.")
 
     # 启动时统一把数据库配置同步到内存，避免 personal/brower 相关运行时配置遗漏。
+    await db.hash_legacy_admin_password()
     await db.reload_config_to_memory()
+    if config.production and config.captcha_method in {"browser", "personal", "extension", "browser_extension"}:
+        raise RuntimeError("Standard production deployment does not provide a local browser runtime; configure an authorized upstream mode before deployment")
     generation_handler.file_cache.set_timeout(config.cache_timeout)
     cache_cleanup_enabled = await generation_handler.file_cache.refresh_cleanup_task()
     captcha_config = await db.get_captcha_config()
@@ -228,26 +235,23 @@ async def lifespan(app: FastAPI):
     print(f"Server running on http://{config.server_host}:{config.server_port}")
     print("=" * 60)
 
-    yield
-
-    # Shutdown
-    print("Flow2API Shutting down...")
-    # Stop file cache cleanup task
-    await generation_handler.file_cache.stop_cleanup_task()
-    # Stop auto-unban task
-    auto_unban_task_handle.cancel()
+    await db.check_ready()
+    app.state.ready = True
     try:
-        await auto_unban_task_handle
-    except asyncio.CancelledError:
-        pass
-    await token_manager.stop_protocol_refresher()
-    # Close browser if initialized
-    if browser_service:
-        await browser_service.close()
-        print("Browser captcha service closed")
-    print("File cache cleanup task stopped")
-    print("429 auto-unban task stopped")
-    print("Protocol token refresher stopped")
+        yield
+    finally:
+        app.state.ready = False
+        admin.active_admin_tokens.clear()
+        print("Flow2API Shutting down...")
+        await generation_handler.file_cache.stop_cleanup_task()
+        auto_unban_task_handle.cancel()
+        try:
+            await auto_unban_task_handle
+        except asyncio.CancelledError:
+            pass
+        await token_manager.stop_protocol_refresher()
+        if browser_service:
+            await browser_service.close()
 
 
 # Initialize components
@@ -276,28 +280,54 @@ app = FastAPI(
     description="OpenAI-compatible API for Google VideoFX (Veo)",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if config.production else "/docs",
+    redoc_url=None if config.production else "/redoc",
+    openapi_url=None if config.production else "/openapi.json",
 )
+app.state.ready = False
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=config.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def production_request_guard(request: Request, call_next):
+    # Browser requests to admin endpoints must originate from an explicit trusted origin.
+    # CLI/header clients without Origin remain supported.
+    if config.production and request.url.path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin = request.headers.get("origin")
+        if origin and origin not in config.cors_origins:
+            return JSONResponse({"detail": "Untrusted request origin"}, status_code=403)
+        if not origin and request.headers.get("sec-fetch-site") == "cross-site":
+            return JSONResponse({"detail": "Cross-site request rejected"}, status_code=403)
+    response = await call_next(request)
+    if config.production:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "same-origin"
+        if request.url.path.startswith("/api/") or request.url.path == "/health":
+            response.headers["Cache-Control"] = "no-store"
+    return response
 
 # Include routers
 app.include_router(routes.router)
 app.include_router(admin.router)
 
 # Static files - serve tmp directory for cached files
-tmp_dir = Path(__file__).parent.parent / "tmp"
-tmp_dir.mkdir(exist_ok=True)
+tmp_dir = config.tmp_dir
+tmp_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/tmp", StaticFiles(directory=str(tmp_dir)), name="tmp")
 
 # HTML routes for frontend
 static_path = Path(__file__).parent.parent / "static"
+app.mount("/static/sponsors", StaticFiles(directory=str(static_path / "sponsors")), name="sponsors")
 _STATIC_PAGE_NO_CACHE_HEADERS = {
     "Cache-Control": "no-store, no-cache, must-revalidate",
     "Pragma": "no-cache",
@@ -354,7 +384,7 @@ async def test_page(request: Request):
 
 
 @app.get("/metrics")
-async def metrics():
+async def metrics(token: str = Depends(admin.verify_admin_token)):
     """Prometheus metrics endpoint for the main Flow2API service."""
     payload = await render_main_metrics(db, concurrency_manager=concurrency_manager)
     return Response(content=payload, media_type=CONTENT_TYPE_LATEST)

@@ -57,6 +57,10 @@
 
 ## 🚀 快速开始
 
+### Railway 单服务部署
+
+Windows 本地 Docker Compose 用法保持兼容。部署 Railway 前请阅读 [部署指南](docs/deployment/railway.md) 和 [环境变量](docs/deployment/environment-variables.md)：生产环境必须显式提供安全凭据、HTTPS 来源和 `/app/data` 持久卷，不能使用下面的本地示例凭据。
+
 ### 前置要求
 
 - Docker 和 Docker Compose（推荐）
@@ -151,11 +155,11 @@ python main.py
 
 ## 📈 监控接口
 
-- `GET /health`：公开健康检查，返回服务是否存活、活跃 Token 数、即将过期 Token 数、已过期 Token 数、429 禁用数等摘要
-- `GET /metrics`：Prometheus 指标接口
+- `GET /health`：公开就绪检查，仅返回状态；初始化未完成或 SQLite 不可读写时返回 503
+- `GET /metrics`：Prometheus 指标接口，需要有效管理员会话（Cookie 或 Bearer）
 - `GET /api/tokens`：管理接口，返回 `at_expires`、`at_expired`、`at_expiring_within_1h`、`ban_reason`、`consecutive_error_count` 等 Token 状态
 
-Prometheus 可直接抓 `/metrics`。如果部署到 Kubernetes，建议只在集群内抓取，并在 Ingress/Gateway 层单独限制 `/metrics` 的外部访问。
+抓取 `/metrics` 时需配置有效的管理员会话，且会话过期或应用重启后需重新登录。
 
 ### 模型测试页面
 

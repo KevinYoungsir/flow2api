@@ -43,8 +43,14 @@ logs.txt
 .DS_Store
 
 # Environment
+.venv/
 .env
 .env.local
+.env.*
+!.env.example
+backups/
+*.db-wal
+*.db-shm
 
 # Config (optional)
 # config/setting.toml

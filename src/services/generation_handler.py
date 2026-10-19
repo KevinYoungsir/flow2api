@@ -1392,7 +1392,7 @@ class GenerationHandler:
         concurrency_manager,
         proxy_manager,
     ):
-        cache_dir = Path(__file__).resolve().parents[2] / "tmp"
+        cache_dir = config.tmp_dir
         self.flow_client = flow_client
         self.token_manager = token_manager
         self.load_balancer = load_balancer

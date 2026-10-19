@@ -32,7 +32,6 @@ from ..core.browser_runtime_status import (
     progress_runtime_prepare,
     start_runtime_prepare,
 )
-from ..core.monitoring import build_public_health_snapshot
 from ..services.token_manager import TokenManager
 from ..services.proxy_manager import ProxyManager
 from ..services.concurrency_manager import ConcurrencyManager
@@ -52,7 +51,7 @@ concurrency_manager: Optional[ConcurrencyManager] = None
 captcha_runtime_prepare_tasks: Dict[str, asyncio.Task] = {}
 
 # Store active admin session tokens (in production, use Redis or database)
-active_admin_tokens = set()
+active_admin_tokens: Dict[str, float] = {}
 ADMIN_SESSION_COOKIE_NAME = "admin_session"
 SUPPORTED_API_CAPTCHA_METHODS = {
     "yescaptcha",
@@ -864,10 +863,10 @@ async def verify_admin_token(request: Request, authorization: str = Header(None)
 
     cookie_token = get_admin_token_from_cookie(request) or ""
 
-    if header_token and header_token in active_admin_tokens:
+    if is_admin_session_token_valid(header_token):
         return header_token
 
-    if cookie_token and cookie_token in active_admin_tokens:
+    if is_admin_session_token_valid(cookie_token):
         return cookie_token
 
     if header_token or cookie_token:
@@ -883,7 +882,11 @@ def get_admin_token_from_cookie(request: Request) -> Optional[str]:
 
 def is_admin_session_token_valid(token: Optional[str]) -> bool:
     normalized = str(token or "").strip()
-    return bool(normalized) and normalized in active_admin_tokens
+    expires = active_admin_tokens.get(normalized, 0)
+    if expires <= time.monotonic():
+        active_admin_tokens.pop(normalized, None)
+        return False
+    return True
 
 
 # ========== Auth Endpoints ==========
@@ -894,21 +897,26 @@ async def admin_login(request: LoginRequest, response: Response):
     """Admin login - returns session token (NOT API key)"""
     admin_config = await db.get_admin_config()
 
-    if not AuthManager.verify_admin(request.username, request.password):
+    if not await asyncio.to_thread(AuthManager.verify_admin, request.username, request.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Generate independent session token
     session_token = f"admin-{secrets.token_urlsafe(32)}"
 
     # Store in active tokens
-    active_admin_tokens.add(session_token)
+    for old_token in list(active_admin_tokens):
+        is_admin_session_token_valid(old_token)
+    if len(active_admin_tokens) >= 100:
+        active_admin_tokens.pop(next(iter(active_admin_tokens)))
+    active_admin_tokens[session_token] = time.monotonic() + config.session_ttl
 
     response.set_cookie(
         key=ADMIN_SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=config.production,
+        max_age=config.session_ttl,
         path="/",
     )
 
@@ -922,8 +930,8 @@ async def admin_login(request: LoginRequest, response: Response):
 @router.post("/api/admin/logout")
 async def admin_logout(response: Response, token: str = Depends(verify_admin_token)):
     """Admin logout - invalidate session token"""
-    active_admin_tokens.discard(token)
-    response.delete_cookie(ADMIN_SESSION_COOKIE_NAME, path="/")
+    active_admin_tokens.pop(token, None)
+    response.delete_cookie(ADMIN_SESSION_COOKIE_NAME, path="/", secure=config.production, httponly=True, samesite="lax")
     return {"success": True, "message": "退出登录成功"}
 
 
@@ -939,7 +947,13 @@ async def change_password(
         raise HTTPException(status_code=400, detail="旧密码错误")
 
     # Update password and username in database
-    update_params = {"password": request.new_password}
+    try:
+        config.validate_credentials(request.username or admin_config.username, request.new_password, admin_config.api_key)
+        if len(request.new_password.encode()) > 72 or not request.new_password:
+            raise ValueError("Password must be 1..72 UTF-8 bytes")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    update_params = {"password": await asyncio.to_thread(AuthManager.hash_password, request.new_password)}
     if request.username:
         update_params["username"] = request.username
 
@@ -1647,12 +1661,15 @@ async def logout(response: Response, token: str = Depends(verify_admin_token)):
 
 
 @router.get("/health")
-async def health_check():
-    """Public health check endpoint - no auth required"""
+async def health_check(request: Request):
+    """Readiness probe: expose no account or token information."""
+    if not getattr(request.app.state, "ready", False):
+        return JSONResponse({"status": "starting"}, status_code=503)
     try:
-        return await build_public_health_snapshot(db)
+        await db.check_ready()
     except Exception:
-        return {"backend_running": True, "has_active_tokens": False}
+        return JSONResponse({"status": "unavailable"}, status_code=503)
+    return {"status": "ok"}
 
 
 @router.get("/api/stats")
@@ -1773,6 +1790,11 @@ async def update_api_key(
     request: UpdateAPIKeyRequest, token: str = Depends(verify_admin_token)
 ):
     """Update API key (for external API calls, NOT for admin login)"""
+    admin_config = await db.get_admin_config()
+    try:
+        config.validate_credentials(admin_config.username, admin_config.password, request.new_api_key, stored=True)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
     # Update API key in database
     await db.update_admin_config(api_key=request.new_api_key)
 
@@ -1787,6 +1809,8 @@ async def update_debug_config(
     request: UpdateDebugConfigRequest, token: str = Depends(verify_admin_token)
 ):
     """Update debug configuration"""
+    if config.production and request.enabled:
+        raise HTTPException(status_code=400, detail="Detailed debug logging is disabled in production")
     try:
         # Update in-memory config only (not database)
         # This ensures debug mode is automatically disabled on restart

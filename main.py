@@ -6,6 +6,9 @@ import uvicorn
 if __name__ == "__main__":
     from src.core.config import config
 
+    config.validate_runtime()
     uvicorn.run(
-        "src.main:app", host=config.server_host, port=config.server_port, reload=False
+        "src.main:app", host=config.server_host, port=config.server_port, reload=False,
+        workers=1, access_log=not config.production,
+        timeout_graceful_shutdown=30,
     )

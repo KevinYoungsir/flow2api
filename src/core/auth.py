@@ -1,6 +1,8 @@
 """Authentication module"""
 
 import bcrypt
+import secrets
+import re
 from typing import Optional
 from fastapi import Header, HTTPException, Query, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -16,13 +18,20 @@ class AuthManager:
     @staticmethod
     def verify_api_key(api_key: str) -> bool:
         """Verify API key"""
-        return api_key == config.api_key
+        return bool(api_key) and secrets.compare_digest(api_key.encode(), config.api_key.encode())
 
     @staticmethod
     def verify_admin(username: str, password: str) -> bool:
         """Verify admin credentials"""
         # Compare with current config (which may be from database or config file)
-        return username == config.admin_username and password == config.admin_password
+        stored = config.admin_password
+        password_ok = (AuthManager.verify_password(password, stored) if AuthManager.is_password_hash(stored)
+                       else secrets.compare_digest(password.encode(), stored.encode()))
+        return secrets.compare_digest(username.encode(), config.admin_username.encode()) and password_ok
+
+    @staticmethod
+    def is_password_hash(value: str) -> bool:
+        return bool(re.fullmatch(r"\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}", value or ""))
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -32,7 +41,12 @@ class AuthManager:
     @staticmethod
     def verify_password(password: str, hashed: str) -> bool:
         """Verify password"""
-        return bcrypt.checkpw(password.encode(), hashed.encode())
+        if len(password.encode()) > 72:
+            return False
+        try:
+            return bcrypt.checkpw(password.encode(), hashed.encode())
+        except (ValueError, TypeError):
+            return False
 
 
 async def verify_api_key_header(

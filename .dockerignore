@@ -75,3 +75,23 @@ test_*.py
 # Environment files
 .env
 .env.*
+
+# Production: never copy local credentials, persistent state or browser profiles
+config/setting.toml
+config/setting_warp*.toml
+data/
+tmp/
+backups/
+browser_data*
+**/browser_data*
+**/__pycache__/
+*.db
+*.db-*
+*.sqlite*
+logs.txt
+*.har
+*.pem
+*.key
+docs/
+extension/
+.railway/
