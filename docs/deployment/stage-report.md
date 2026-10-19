@@ -71,10 +71,10 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 - flow2api-data：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
 - Dockerfile builder，python main.py，`/health`，120 秒检查，单副本，不休眠，0.5 vCPU / 0.5GB 内存上限。
 - 已应用生产运行变量及用户手动设置的两个秘密变量；秘密值未回显、写入文件或提交。
-- 当前源码固定为 **`bb1cc904b65e9e7dfbc122a5e5b71b23e3a25609`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f。后续文档提交不会改变当前固定的运行版本。
+- 当前源码固定为 **`95b22111e776cc20a7b104c3dd35c57375618748`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904。后续文档提交不会改变当前固定的运行版本。
 - 正式地址 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用，均指向 8000；PUBLIC_BASE_URL 为根域，CORS 同时包含两个地址。
 
-首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和当前 **`e935c3c0-3a93-47ce-8b43-393310052877`（SUCCESS，16:55:54）**。最新运行日志确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
+首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复发布为当前 **`ca4df022-8a58-49a6-8589-8e0448906a2b`（SUCCESS，17:19:13）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
 
 | 云端检查 | 实际结果 |
 | --- | --- |
@@ -106,6 +106,8 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 用户随后授权各执行一次真实图片和视频生成。2026-10-19 17:06（Asia/Shanghai）调用前预检：正式域名与 Railway 备用域名的管理员登录均成功，GET /api/tokens 均为 HTTP 200 且返回空数组，账号总数和启用数均为 0；不是鉴权错误或两域名数据不同。未提交生成请求，以上真实生成项目继续为 NOT RUN。已请用户在正式后台保存上游账号并确认列表出现启用记录；不在聊天接收 Token/Cookie/密码。
 
 用户随后提供 Chrome Token Updater 的 `403: Untrusted request origin`。已核对配套插件源码：后台同步通过 Authorization Bearer 独立连接令牌调用 /api/plugin/update-token。部署新增的通用管理来源保护在该专用鉴权之前拦截了扩展 Origin。修复只让 POST /api/plugin/update-token 与 POST /api/plugin/check-tokens 进入其既有独立连接令牌鉴权，不改变其他管理写接口来源校验或 HTTPS CORS 白名单。4 项新增 HTTP 回归测试在修复前真实失败，修复后全套 189 项通过；覆盖正确/错误/缺失插件令牌、管理员 Cookie 不能代替插件令牌、非插件管理写接口继续 403，受控上游校验异常与真实生成结果严格区分。
+
+95b22111 已实际发布，云端以扩展 Origin 与独立连接令牌、完全不带管理员 Cookie 调用 POST /api/plugin/check-tokens 得到 200。两个插件端点无令牌/错误令牌均 401，其他管理写接口仍 403；管理登录/退出、Cookie、API Key、有效缓存 URL 的线上回归全部通过。独立连接令牌已存在且未重置、未回显。测试时上游账号仍为 0；已请用户在本机插件点击立即同步，尚未声称真实 Cookie 上传、上游登录或图片/视频生成成功。[核对的插件实现](https://github.com/TheSmallHanCat/Flow2API-Token-Updater/blob/main/background.js)
 
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
 
