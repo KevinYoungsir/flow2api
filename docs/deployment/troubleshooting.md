@@ -15,6 +15,7 @@
 | 403 Untrusted request origin / CORS | 填精确 HTTPS origin；不要包含路径、通配或错误端口；反代应保留浏览器 Origin；同源前端无需改为独立站点 |
 | Chrome Token Updater 同步报 403 Untrusted request origin | 插件使用独立连接令牌，部署修复将两个专用 POST 同步端点交给既有 Bearer 鉴权；管理接口仍校验来源。接口填 https://socool.xin/api/plugin/update-token，连接令牌从后台插件配置复制；无需放宽 CORS。升级修复版后在插件点击立即同步，401 时核对插件连接令牌，400 时查看上游登录态验证提示 |
 | 插件返回 400，内层 Google Cookie 验证 rpc=nzlxg, code=401 | 插件连接鉴权已通过，Google 未接受当前登录态；仅凭该码无法判断过期、账号混用或兼容性。在同一 Chrome 用户配置打开 https://flow.google.com/projects，确认可见账号/项目且与插件邮箱一致；需要时重新登录再同步。页面正常且账号一致仍失败时继续排查客户端兼容性。服务只在上游验证成功后保存可用账号 |
+| 网页正常但服务器同步仍 401 | 已修正 bootstrap GET 更新/删除的 Cookie 未传给后续 RPC 的兼容缺陷。修复版会保留作用域和同次请求的会话更新；若仍失败，记录新的错误文字及 page_identity / cookies_changed 两个标签。这些标签不包含凭据，不能单凭它们断言 Google 的具体拒绝原因 |
 | 修改密码后旧会话 401 | 预期：所有管理员会话撤销，重新登录 |
 | /metrics 或 /docs 未公开 | metrics 需要管理员会话，docs/openapi 在生产关闭；health 保持公开 |
 | /tmp 链接 404 | 缓存启用吗、文件已过期或容器重建了吗；PUBLIC_BASE_URL 是否为实际域名；文件目录和静态挂载均用 TMP_DIR；不要返回 Windows 路径 |

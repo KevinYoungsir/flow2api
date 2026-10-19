@@ -14,6 +14,7 @@
 | src/core/database.py、auth.py | 迁移前读取校验既有凭据；保留 DB 配置；管理员密码兼容 bcrypt 迁移；常量时间比较；实际 SQLite 读写就绪探测 |
 | src/api/admin.py、src/main.py | Secure/HttpOnly/Lax Cookie、会话 TTL/撤销、生产管理来源限制；/health 只公开状态并正确返回 503；metrics 鉴权；生产关闭 API 文档；缓存有效地址显示遵守 PUBLIC_BASE_URL 优先级 |
 | src/api/routes.py、services/file_cache.py、generation_handler.py | 公开 URL 优先环境配置，统一 TMP_DIR 和静态路径；生成器仅改缓存目录一行，没有修改核心生成逻辑 |
+| src/services/flow_frontend.py | 页面到 RPC/StreamChat 的调用内传递 libcurl 更新后的 Cookie 快照，保留作用域和删除；上游 401 仅附加无秘密的上下文标签 |
 | Dockerfile、.dockerignore、.gitignore、服务设置快照 | 保留现有镜像启动方式；补齐状态/秘密排除；/health、单副本、不休眠和失败重试配置。云端发现旧 Config as Code 被新服务拒绝，已移除本次添加的根 railway.json，使用服务设置并读取核对 |
 | requirements.txt | 补 Pillow（现有代码与测试使用） |
 | README、docs/deployment/* | 更新部署入口、健康/metrics 说明；给出变量、备份、根域名方案和排障说明 |
@@ -36,7 +37,7 @@ $env:PYTHONIOENCODING='utf-8'
 | 检查 | 结果 | 证据/范围 |
 | --- | --- | --- |
 | Python 编译 | PASS | main/src/scripts/tests，实际执行 |
-| 全部单元与集成测试 | PASS | **189 tests，0 failures，0 errors**；插件来源修复后最终一次 27.000 秒，原有 170 + 新增 19，并补充既有进程测试断言 |
+| 全部单元与集成测试 | PASS | **193 tests，0 failures，0 errors**；会话连续性修复后最终一次 43.407 秒，原有 170 + 新增 23，并补充既有进程测试断言 |
 | 依赖一致性 | PASS | pip check：No broken requirements found |
 | HTTP 启动与 PORT | PASS（本地） | 独立 Uvicorn 子进程，临时端口、与源码不同 cwd，配置为 production |
 | 登录/退出/改密码 | PASS（本地） | 错密码 401、正确登录、会话撤销、旧密码失效、bcrypt 存储 |
@@ -110,6 +111,8 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 95b22111 已实际发布，云端以扩展 Origin 与独立连接令牌、完全不带管理员 Cookie 调用 POST /api/plugin/check-tokens 得到 200。两个插件端点无令牌/错误令牌均 401，其他管理写接口仍 403；管理登录/退出、Cookie、API Key、有效缓存 URL 的线上回归全部通过。独立连接令牌已存在且未重置、未回显。测试时上游账号仍为 0；已请用户在本机插件点击立即同步，尚未声称真实 Cookie 上传、上游登录或图片/视频生成成功。[核对的插件实现](https://github.com/TheSmallHanCat/Flow2API-Token-Updater/blob/main/background.js)
 
 用户随后提供 17:22 的新错误：服务返回 400，内层 Google 登录态校验 RPC nzlxg 返回 401。云端代理记录确认修复后 17:21—17:22 有三次 POST /api/plugin/update-token 返回 400；此错误发生在独立连接令牌通过后，已不再是来源拦截。当前只能确认 Google 未接受同步的登录态，无法仅凭该状态判断过期、账号混用或客户端兼容性。已请用户确认同一 Chrome 配置中的 Flow 项目页与插件邮箱一致，并在需要时重新登录后同步；没有放宽上游校验或把失败会话保存为可用账号。真实图片/视频继续 NOT RUN。
+
+用户确认同一 Chrome 配置中的 Flow 页面正常且账号一致后，继续审计发现 bootstrap GET 与后续 RPC/StreamChat 使用独立快照，响应更新/删除的 Cookie 丢失。4 项合成会话测试实际复现了后续请求仍使用旧值的问题。修复复用已有 Cookie jar/导出逻辑：GET 使用带作用域的 jar，读取 libcurl 完整快照（含重定向更新、删除），在同一次调用内传给后续请求；不改变生成参数、验证码或上游拒绝处理。测试覆盖轮换、删除、域/路径隔离、登录重定向拒绝；上游仍返回 401 时，只附加 page_identity=present/missing/unknown 与 cookies_changed=yes/no/unknown，不输出邮箱、Cookie、XSRF 或会话 ID。全套 193 项通过。此为已复现兼容缺陷的修复，是否解决用户真实 401 仍需插件重新同步，未把合成测试作为真实登录或生成通过。
 
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
 
