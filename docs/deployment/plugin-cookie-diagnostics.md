@@ -29,4 +29,6 @@
 
 已从配套插件提交 `e1ed56627596209c9e77df381e3fe82e0a17c492` 准备本地修复副本 `D:\Flow2API\tmp\Flow2API-Token-Updater-permission-fix`，只在 manifest.json 增加 `http://google.com/*`、`http://*.google.com/*` 两项 Google 主机权限。13 个其他源文件逐字节哈希未变，background.js/popup.js 语法检查通过；[最小补丁](../../scripts/token-updater-google-cookie-permissions.patch) 已通过 git apply --check。Cookie 仍按原来的 HTTPS Flow URL 采集并保留作用域，上传仍使用原 HTTPS 接口；未改验证码、服务端校验或账号数据，没有重新部署 Railway。
 
-优先在用户提供的原解压文件夹中应用补丁，以保留原安装身份和 Chrome 保存的插件配置；修改前备份原 manifest。用户随后在 chrome://extensions 重新加载，并在出现 Chrome 权限提示时确认新增的 Google 权限，再尝试同步。不要直接修改 Chrome 用户数据目录中的已安装扩展文件。原目录未知或商店安装时，可使用已准备的修复副本；切换副本前停用旧插件，连接配置只在本机/后台处理，不发到聊天。当前未修改真实安装目录、未获得新权限、未执行修复后的真实同步，不能标记同步通过。
+用户随后提供原解压文件夹 `D:\Flow2API-Token-Updater-main`。2026-10-20 10:18（Asia/Shanghai）已在原目录应用上述最小修复，保留原安装路径；清单身份、版本及 worker 路径均先核对为预期值。原清单先以独占创建方式备份为 `manifest.json.before-cookie-permissions-20261020T021820Z-046ade57.bak`，字节核对一致，再使用同目录临时文件原子替换 manifest。除新增的两项 host_permissions 外所有清单字段均相同，background.js 与 popup.js 修改前后哈希相同，二者 node --check 通过。此操作没有访问 Chrome 保存的连接配置，也没有重新安装插件或修改其存储。
+
+已请用户在 chrome://extensions 点击现有插件卡片的重新加载按钮，在出现权限提示时确认新增的 Google 权限并启用，再点立即同步。磁盘上的修复不代表已运行的 worker 自动获得新权限；目前 Chrome 重新加载、实际授权及修复后同步结果仍待用户确认，不能标记同步通过。不要直接修改 Chrome 用户数据目录中的已安装扩展文件；连接配置只在本机/后台处理，不发到聊天。
