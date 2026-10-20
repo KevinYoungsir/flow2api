@@ -1,0 +1,14 @@
+diff --git a/manifest.json b/manifest.json
+--- a/manifest.json
++++ b/manifest.json
+@@ -11,7 +11,9 @@
+   ],
+   "host_permissions": [
+     "https://google.com/*",
+-    "https://*.google.com/*"
++    "https://*.google.com/*",
++    "http://google.com/*",
++    "http://*.google.com/*"
+   ],
+   "optional_host_permissions": [
+     "http://*/*",
