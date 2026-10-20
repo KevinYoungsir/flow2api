@@ -1193,10 +1193,11 @@ def _apply_current_flow_model_catalog():
                 f"Veo 3.1 - Lite · {seconds}s · {orientation}",
             )
 
-    # Veo 3.1 Fast. Current 4s/6s consumer access uses relaxed usage keys.
+    # Public Fast choices request standard priority. Relaxed is a distinct
+    # upstream option and must not be silently selected for these aliases.
     for seconds, landscape_key, portrait_key in (
-        (4, "veo_3_1_t2v_fast_4s_relaxed", "veo_3_1_t2v_fast_4s_relaxed"),
-        (6, "veo_3_1_t2v_fast_6s_relaxed", "veo_3_1_t2v_fast_6s_relaxed"),
+        (4, "veo_3_1_t2v_fast_4s", "veo_3_1_t2v_fast_4s"),
+        (6, "veo_3_1_t2v_fast_6s", "veo_3_1_t2v_fast_6s"),
         (8, "veo_3_1_t2v_fast", "veo_3_1_t2v_fast_portrait"),
     ):
         register(

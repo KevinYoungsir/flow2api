@@ -36,7 +36,7 @@ class VeoLiteModelResolverTests(unittest.TestCase):
     def test_current_aliases_use_live_upstream_keys(self):
         self.assertEqual(
             MODEL_CONFIG["veo-3.1-fast-4s-landscape"]["model_key"],
-            "veo_3_1_t2v_fast_4s_relaxed",
+            "veo_3_1_t2v_fast_4s",
         )
         self.assertEqual(
             MODEL_CONFIG["omni-1.1-flash-4s-landscape"]["model_key"],
@@ -262,6 +262,36 @@ class VeoLiteFlowClientTests(unittest.IsolatedAsyncioTestCase):
             return_value=("recaptcha-token", "browser-1")
         )
         self.client._notify_browser_captcha_request_finished = AsyncMock()
+
+    async def test_public_short_fast_choices_submit_standard_priority_and_orientation(self):
+        project_id = "22222222-2222-2222-2222-222222222222"
+        self.client._call_flow_frontend_rpc = AsyncMock(
+            return_value=[[
+                "11111111-1111-1111-1111-111111111111",
+                project_id,
+                "33333333-3333-3333-3333-333333333333",
+            ]]
+        )
+        for seconds in (4, 6):
+            for orientation, aspect_value in (("landscape", 2), ("portrait", 1)):
+                with self.subTest(seconds=seconds, orientation=orientation):
+                    model = MODEL_CONFIG[f"veo-3.1-fast-{seconds}s-{orientation}"]
+                    self.client._call_flow_frontend_rpc.reset_mock()
+                    await self.client.generate_video_text(
+                        at="at-token",
+                        project_id=project_id,
+                        prompt="teapot",
+                        model_key=model["model_key"],
+                        aspect_ratio=model["aspect_ratio"],
+                        use_v2_model_config=model["use_v2_model_config"],
+                        google_cookies="SID=session-cookie",
+                    )
+                    self.client._call_flow_frontend_rpc.assert_awaited_once()
+                    rpc = self.client._call_flow_frontend_rpc.await_args.kwargs
+                    self.assertEqual(rpc["rpc_id"], "YhhmEf")
+                    request = rpc["argument"][0][0]
+                    self.assertEqual(request[1], f"veo_3_1_t2v_fast_{seconds}s")
+                    self.assertEqual(request[2], aspect_value)
 
     async def test_generate_video_text_uses_v2_payload_for_lite(self):
         operation_id = "11111111-1111-1111-1111-111111111111"
