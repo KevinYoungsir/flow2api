@@ -101,7 +101,7 @@
       "cache_timeout_env": "7200"
     }
   },
-  "video_followup": "User confirmed ordinary Fast. Standard-priority mapping deployed and verified, but one post-fix video request still returned PUBLIC_ERROR_MODEL_ACCESS_DENIED. Await native page domain and successful video resolution; no further submissions.",
+  "video_followup": "Native domain confirmed flow.google.com. Subsequent readonly nzlxg query now returns code=401, also with DB runtime configuration and existing account binding. Await plugin resync result before further parameter comparison. No additional generation requests or deployments this round.",
   "credential_handling": "API key used in RAM only; no credentials retained in this report.",
   "initial_deployment_id": "be1dd801-362d-4915-ae3d-210c28a3fa8b",
   "initial_source_commit": "5d6c401df4330b411c4f8c6aec92677455f81af3",
@@ -154,5 +154,35 @@
     "hash_verified_before_and_after_deploy": true,
     "same_public_cache_path_restored": true
   },
-  "official_feature_reference": "https://support.google.com/flow/answer/16352836?hl=en"
+  "official_feature_reference": "https://support.google.com/flow/answer/16352836?hl=en",
+  "readonly_followup": {
+    "observed_at_utc": "2026-10-20T03:10:49Z",
+    "native_domain_confirmed": "flow.google.com",
+    "native_resolution_known": false,
+    "credits_rpc_succeeded": false,
+    "credits_rpc_error_codes": [
+      "code=401",
+      "rpc=nzlxg"
+    ],
+    "db_config_account_bound_recheck": "same_authentication_failure",
+    "stored_cookie_count": 23,
+    "rpc_auth_names": [
+      "APISID",
+      "HSID",
+      "OSID",
+      "SAPISID",
+      "SID",
+      "SSID",
+      "__Secure-1PSID",
+      "__Secure-3PSID",
+      "__Secure-OSID"
+    ],
+    "explicitly_expired_auth_names": [],
+    "last_observed_plugin_upload": {
+      "timestamp_utc": "2026-10-20T02:22:03.395161743Z",
+      "http_status": 200
+    },
+    "additional_generation_requests": 0,
+    "production_settings_changed": false
+  }
 }
