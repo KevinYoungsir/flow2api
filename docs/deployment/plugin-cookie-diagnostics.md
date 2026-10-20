@@ -1,6 +1,6 @@
 # 插件 Cookie 采集范围诊断
 
-当前结果：**插件真实同步 PASS**。2026-10-20 用户重新加载权限修复后的原插件并回复同步成功；Railway 代理日志确认 10:22:03（Asia/Shanghai）POST /api/plugin/update-token 返回 HTTP 200，正式域名 /health 同时复核为 200/ok。以下保留排查证据与可重复的只读诊断步骤；真实图片/视频生成仍按用户要求记录为缺少现有验证码配置而受阻，未执行。
+当前结果：**插件真实同步 PASS**。2026-10-20 用户重新加载权限修复后的原插件并回复同步成功；Railway 代理日志确认 10:22:03（Asia/Shanghai）POST /api/plugin/update-token 返回 HTTP 200，正式域名 /health 同时复核为 200/ok。以下保留排查证据与可重复的只读诊断步骤；此后验证码已补齐，真实图片已通过，视频返回模型访问拒绝并在核对映射，见 [真实生成报告](live-acceptance-20261020.md)。
 
 此前证据：2026-10-19 后台已保存会话可查询 Google 余额；同一账号插件上传被 nzlxg RPC 拒绝。失败响应为 `stored_session=different; auth_values=different; missing_auth=3; extra_auth=0`。missing_auth 是按照实际 RPC URL 筛选后的标准认证 Cookie 数量差，并不包含具体名称，也不能单凭它认定过期、分区或插件故障。
 

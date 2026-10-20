@@ -2,6 +2,8 @@
 
 日期：2026-10-19 至 2026-10-20（Asia/Shanghai）。分支：`deploy/railway-single-service`。基线：`60e673b05fe2630189f49e6dd3b275c2c8599158`。最终提交 SHA 使用 `git rev-parse HEAD` 获取（避免把提交本身 SHA 循环写入同一提交）；对话最终报告会提供实际 SHA。
 
+当前业务验收：**真实图片 PASS；普通 Fast 标准优先级映射已修复发布，但视频验证仍 FAIL（PUBLIC_ERROR_MODEL_ACCESS_DENIED）**。完整 197 项回归通过，当前部署 d54f59c、1/1 在线。用户已配置验证码，并确认同账号网页端曾成功使用目标视频模型；待核对网页最终域名及成功视频分辨率，不能直接判定为账号缺少全部视频权限。详见 [本次真实生成报告](live-acceptance-20261020.md)。以下按阶段保留历史阻塞与修复记录。
+
 ## 阶段一：审计完成
 
 目标目录原为空，已克隆指定仓库并创建部署分支；没有覆盖原工作区或数据库。审计见 [initial-audit.md](initial-audit.md)。本机 Python 3.12.10，独立 `.venv`；首次测试发现 Windows GBK 输出导致两处导入错误及 Pillow 未声明，首次共执行 99 tests / 3 errors，未记为通过。修复测试编码与依赖后，原有 170 tests 全部通过。
@@ -13,7 +15,7 @@
 | main.py、src/core/config.py | PORT 优先、生产 0.0.0.0、单 worker、运行变量校验；明确 DB/初始化变量/TOML 优先级；缺安全配置失败；生产禁详细 debug 和访问日志 |
 | src/core/database.py、auth.py | 迁移前读取校验既有凭据；保留 DB 配置；管理员密码兼容 bcrypt 迁移；常量时间比较；实际 SQLite 读写就绪探测 |
 | src/api/admin.py、src/main.py | Secure/HttpOnly/Lax Cookie、会话 TTL/撤销、生产管理来源限制；/health 只公开状态并正确返回 503；metrics 鉴权；生产关闭 API 文档；缓存有效地址显示遵守 PUBLIC_BASE_URL 优先级 |
-| src/api/routes.py、services/file_cache.py、generation_handler.py | 公开 URL 优先环境配置，统一 TMP_DIR 和静态路径；生成器仅改缓存目录一行，没有修改核心生成逻辑 |
+| src/api/routes.py、services/file_cache.py、generation_handler.py | 公开 URL 优先环境配置，统一 TMP_DIR 和静态路径；后续真实验收另修正普通四秒/六秒 Fast 文生视频的标准优先级映射，未改生成协议或权限拒绝处理 |
 | src/services/flow_frontend.py | 页面到 RPC/StreamChat 的调用内传递 libcurl 更新后的 Cookie 快照，保留作用域和删除；上游 401 仅附加无秘密的上下文标签 |
 | Dockerfile、.dockerignore、.gitignore、服务设置快照 | 保留现有镜像启动方式；补齐状态/秘密排除；/health、单副本、不休眠和失败重试配置。云端发现旧 Config as Code 被新服务拒绝，已移除本次添加的根 railway.json，使用服务设置并读取核对 |
 | requirements.txt | 补 Pillow（现有代码与测试使用） |
@@ -72,7 +74,7 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 - flow2api-data：`a5f5a5fe-1b12-46af-b8e4-79be8b3cabf2`，500MB，sfo，挂载 `/app/data`。
 - Dockerfile builder，python main.py，`/health`，120 秒检查，单副本，不休眠，0.5 vCPU / 0.5GB 内存上限。
 - 已应用生产运行变量及用户手动设置的两个秘密变量；秘密值未回显、写入文件或提交。
-- 当前源码固定为 **`5d6c401df4330b411c4f8c6aec92677455f81af3`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904，插件来源修复版为 95b22111，会话连续性修复版为 d2053ea2。后续文档提交不会改变当前固定的运行版本。
+- 当前源码固定为 **`d54f59cdfcef46172fac9e0c0451ec97e46647ec`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904，插件来源修复版为 95b22111，会话连续性修复版为 d2053ea2，失败上传诊断版为 5d6c401。后续文档提交不会改变当前固定的运行版本。
 - 正式地址 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用，均指向 8000；PUBLIC_BASE_URL 为根域，CORS 同时包含两个地址。
 
 首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复为 ca4df022（SUCCESS，17:19:13），会话连续性修复为 104c3d82（SUCCESS，17:37:54）。诊断版本首次部署 **`d5528bcf-0012-491b-b751-43d90a78ebd9`（SUCCESS，17:53:14）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。该次验证 1/1 副本在线、0 crashed，无待发布变更；控制台当时仍显示首个历史失败，不代表该次部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
@@ -102,9 +104,9 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 修复提交 bb1cc904 已实际发布为 e935c3c0，根域验收脚本全部通过，包括有效缓存地址 https://socool.xin、携带根域 Origin 的登录/写配置、API 与重新部署后的 SQLite 标记保留；原测试设置已恢复。根域 HTTP → HTTPS 为 301；首页、登录页、health、实际赞助图均 200。根域 CORS 预检 200、非可信来源预检 400、非可信管理写请求 403。专用空文件 /tmp 路由返回 200，测试文件随后删除；仅证明路由，不是图片/视频生成结果。
 
-## 阶段六：真实业务未验收
+## 阶段六：真实图片已通过，视频仍在排查
 
-云端启动日志显示 Total tokens: 0。真实 Google Flow 账号、必要登录态、权限和额度尚未配置。**真实图片生成：NOT RUN；真实视频生成：NOT RUN；生成结果可访问：NOT RUN**。云端重启持久化已通过，测试夹具、模型目录返回和健康检查均未被当作生成成功。
+最初云端启动日志显示 Total tokens: 0。当时真实 Google Flow 账号、必要登录态、权限和额度尚未配置，真实图片、视频及结果访问均记为 NOT RUN。云端重启持久化已通过，测试夹具、模型目录返回和健康检查均未被当作生成成功；本节后续记录真实执行结果。
 
 用户随后授权各执行一次真实图片和视频生成。2026-10-19 17:06（Asia/Shanghai）调用前预检：正式域名与 Railway 备用域名的管理员登录均成功，GET /api/tokens 均为 HTTP 200 且返回空数组，账号总数和启用数均为 0；不是鉴权错误或两域名数据不同。未提交生成请求，以上真实生成项目继续为 NOT RUN。已请用户在正式后台保存上游账号并确认列表出现启用记录；不在聊天接收 Token/Cookie/密码。
 
@@ -132,9 +134,15 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 同日跨日余额复核尝试在管理员登录阶段被拒绝，所用为 Railway 初始化变量，未重复尝试、未覆盖 DB 中管理员配置，也未执行余额请求。因此余额查询通过的证据仍为 2026-10-19 记录；不能声称 10-20 已重新验证该会话。此项不阻止独立准备插件权限补丁，无需在聊天索取新密码。
 
+用户随后补齐验证码配置并授权继续真实生成。10:30 起通过当前正式域名实际执行各一个生成请求：标准方形图片约 38 秒成功，JPEG 1024×1024，可经 /tmp 访问且完整解码通过；四秒 Fast 视频约 45.53 秒返回 PUBLIC_ERROR_MODEL_ACCESS_DENIED，业务日志 failed/500，没有视频结果。两次 SSE 均正常结束，不能因 HTTP 200 把视频记为成功。用户确认网页同账号可用该模型，正在核对普通 Fast 与 _relaxed 低优先级映射；未额外重提视频、未修改生产模型配置。期间通过已授权 Railway 连接只读获取生效状态及内存 API Key，不再依赖已失效的管理员初始化密码；同日真实余额查询也已成功。完整数据与复核边界见 [真实生成报告](live-acceptance-20261020.md)。
+
 视频默认应用超时 1500 秒超过 Railway 当前 HTTP 15 分钟上限。SSE 不能突破该总时限，阶段六的较长请求验证仍是开放项；若合法业务实测超过平台窗口，需另行设计可恢复异步任务方案。
+
+用户进一步确认网页成功选项为普通 Fast。已将公开四秒/六秒 Fast 文生视频从 _relaxed 修正为同一时长标准 key，保留上游权限拒绝立即停止的行为。新增公开选项到 RPC 参数的回归，全套 197 项通过，编译与依赖检查通过。d54f59c 已发布为 b7800b55-6fda-4f84-afcb-61d98c308ee2，SUCCESS、1/1 在线。发布前将已生成图片保存在既有持久卷，发布后恢复同一 URL 并核对哈希和完整解码，未重新生成图片。
+
+10:56:02 使用经线上读取确认的标准 key 另提交唯一一次视频验证，约 20.61 秒后仍为 PUBLIC_ERROR_MODEL_ACCESS_DENIED；业务日志 failed/500、进度 24%，没有视频结果。总计一个图片请求、两个视频请求，未继续重提。映射修复已完成，但视频验收仍未通过；需网页实际参数证据继续定位，不把它归为 Railway 构建或运行失败。
 
 ## 用户下一步
 
-1. 插件同步已通过，不需要重复添加账号或修改 DNS。用户暂无现有验证码配置，真实生成按要求记录受阻；未来具备符合上游使用规则的现有配置后，再继续已经授权的各一次图片/视频验收。不要在聊天发送 Token/Cookie/密钥。
+1. 插件同步和真实图片已通过，无需重复配置账号、验证码或 DNS。普通 Fast 映射修复 d54f59c 已部署但视频仍拒绝；待提供此前成功视频所在的网页域名与分辨率，无需额外生成，不要在聊天发送完整请求、Token/Cookie/密钥。
 2. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。

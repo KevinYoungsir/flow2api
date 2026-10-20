@@ -1,0 +1,158 @@
+{
+  "date": "2026-10-20",
+  "timezone": "Asia/Shanghai",
+  "base_url": "https://socool.xin",
+  "deployment_id": "b7800b55-6fda-4f84-afcb-61d98c308ee2",
+  "source_commit": "d54f59cdfcef46172fac9e0c0451ec97e46647ec",
+  "image": {
+    "kind": "image",
+    "model": "gemini-3.1-flash-image-square",
+    "prompt": "A red ceramic teapot on a pale wooden table beside a small green plant, soft morning sunlight, simple still life photograph, no text, square composition.",
+    "started_at": "2026-10-20T02:30:18.152889+00:00",
+    "status": "pass",
+    "api_requests": 1,
+    "http_status": 200,
+    "stream_done": true,
+    "safe_error_codes": [],
+    "error_received": false,
+    "result_url_count": 1,
+    "result_url": "https://socool.xin/tmp/a22953faf7bd93eb0a411f866182e0e5.jpg",
+    "media_check": {
+      "http_status": 206,
+      "content_type": "image/jpeg",
+      "media_signature_valid": true,
+      "accessible": true
+    },
+    "elapsed_seconds": 38.0,
+    "decoded_image": {
+      "format": "JPEG",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 679609,
+      "sha256": "18b81d3a791a315d2969a84334fdd98fa870b08723212a22495704e4e82fb71a",
+      "full_decode_pass": true
+    }
+  },
+  "initial_video": {
+    "kind": "video",
+    "model": "veo-3.1-fast-4s-landscape",
+    "prompt": "A red ceramic teapot on a pale wooden table beside a small green plant. A gentle breeze moves the leaves in warm morning sunlight. Locked camera, peaceful still life, no people, no text.",
+    "started_at": "2026-10-20T02:32:34.756493+00:00",
+    "status": "failed",
+    "api_requests": 1,
+    "http_status": 200,
+    "stream_done": true,
+    "safe_error_codes": [
+      "PUBLIC_ERROR_MODEL_ACCESS_DENIED",
+      "rpc=YhhmEf"
+    ],
+    "error_received": true,
+    "result_url_count": 0,
+    "failure": "generation_error",
+    "upstream_result_present": false,
+    "elapsed_seconds": 45.53
+  },
+  "server_evidence": {
+    "business_logs": [
+      {
+        "operation": "generate_image",
+        "model": "gemini-3.1-flash-image-square",
+        "business_status_code": 200,
+        "status_text": "completed",
+        "progress": 100,
+        "duration_seconds": 37.248260736465454,
+        "created_at_utc": "2026-10-20 02:30:19",
+        "upstream_error_codes": [],
+        "recorded_image_attempt_count": 1
+      },
+      {
+        "operation": "generate_video",
+        "model": "veo-3.1-fast-4s-landscape",
+        "business_status_code": 500,
+        "status_text": "failed",
+        "progress": 24,
+        "duration_seconds": 45.18585419654846,
+        "created_at_utc": "2026-10-20 02:32:35",
+        "upstream_error_codes": [
+          "PUBLIC_ERROR_MODEL_ACCESS_DENIED",
+          "rpc=YhhmEf"
+        ],
+        "recorded_image_attempt_count": null
+      },
+      {
+        "operation": "generate_video",
+        "model": "veo-3.1-fast-4s-landscape",
+        "business_status_code": 500,
+        "status_text": "failed",
+        "progress": 24,
+        "duration_seconds": 20.21141815185547,
+        "created_at_utc": "2026-10-20 02:56:03",
+        "upstream_error_codes": [
+          "PUBLIC_ERROR_MODEL_ACCESS_DENIED",
+          "rpc=YhhmEf"
+        ],
+        "recorded_image_attempt_count": null
+      }
+    ],
+    "cache": {
+      "cache_enabled": 1,
+      "cache_timeout": 7200,
+      "cache_enabled_env": "true",
+      "cache_timeout_env": "7200"
+    }
+  },
+  "video_followup": "User confirmed ordinary Fast. Standard-priority mapping deployed and verified, but one post-fix video request still returned PUBLIC_ERROR_MODEL_ACCESS_DENIED. Await native page domain and successful video resolution; no further submissions.",
+  "credential_handling": "API key used in RAM only; no credentials retained in this report.",
+  "initial_deployment_id": "be1dd801-362d-4915-ae3d-210c28a3fa8b",
+  "initial_source_commit": "5d6c401df4330b411c4f8c6aec92677455f81af3",
+  "post_fix_video": {
+    "kind": "video",
+    "model": "veo-3.1-fast-4s-landscape",
+    "prompt": "A red ceramic teapot on a pale wooden table beside a small green plant. A gentle breeze moves the leaves in warm morning sunlight. Locked camera, peaceful still life, no people, no text.",
+    "started_at": "2026-10-20T02:56:02.546042+00:00",
+    "status": "failed",
+    "api_requests": 1,
+    "run_label": "standard-fast",
+    "upstream_model_key": "veo_3_1_t2v_fast_4s",
+    "http_status": 200,
+    "stream_done": true,
+    "safe_error_codes": [
+      "PUBLIC_ERROR_MODEL_ACCESS_DENIED",
+      "rpc=YhhmEf"
+    ],
+    "error_received": true,
+    "result_url_count": 0,
+    "failure": "generation_error",
+    "upstream_result_present": false,
+    "elapsed_seconds": 20.61
+  },
+  "request_counts": {
+    "image": 1,
+    "video": 2
+  },
+  "regression": {
+    "targeted_tests": 30,
+    "full_tests": 197,
+    "full_duration_seconds": 36.924,
+    "compileall": "pass",
+    "pip_check": "pass"
+  },
+  "post_deployment_checks": {
+    "health": true,
+    "login_page": true,
+    "manage_requires_session": true,
+    "metrics_requires_session": true,
+    "wrong_api_key_rejected": true,
+    "authenticated_models": true,
+    "standard_fast_mapping": true,
+    "replicas_running": 1,
+    "replicas_crashed": 0,
+    "pending_changes": false
+  },
+  "image_volume_backup": {
+    "path": "/app/data/acceptance/20261020/a22953faf7bd93eb0a411f866182e0e5.jpg",
+    "hash_verified_before_and_after_deploy": true,
+    "same_public_cache_path_restored": true
+  },
+  "official_feature_reference": "https://support.google.com/flow/answer/16352836?hl=en"
+}
