@@ -1,6 +1,6 @@
 # 阶段交付与验收报告
 
-日期：2026-10-19（Asia/Shanghai）。分支：`deploy/railway-single-service`。基线：`60e673b05fe2630189f49e6dd3b275c2c8599158`。最终提交 SHA 使用 `git rev-parse HEAD` 获取（避免把提交本身 SHA 循环写入同一提交）；对话最终报告会提供实际 SHA。
+日期：2026-10-19 至 2026-10-20（Asia/Shanghai）。分支：`deploy/railway-single-service`。基线：`60e673b05fe2630189f49e6dd3b275c2c8599158`。最终提交 SHA 使用 `git rev-parse HEAD` 获取（避免把提交本身 SHA 循环写入同一提交）；对话最终报告会提供实际 SHA。
 
 ## 阶段一：审计完成
 
@@ -120,7 +120,7 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 17:38:28 云端管理接口 POST /api/tokens 实际 200，随后只读检查确认已有 1 个启用账号，来源不是插件的默认添加备注；该记录包含有作用域的 Cookie，没有分区、过期或非根路径记录，也未配置账号专用代理。真实 POST /api/tokens/{id}/refresh-credits 返回 200 且余额为正，证明已保存会话可完成 Google 余额 RPC；没有提交生成任务，也不能据此认定插件上传会话相同或有效。插件和管理添加路径均调用同一个 st_to_at 校验方法。
 
-为继续定位两份会话差异，5d6c401 增加仅在插件独立鉴权通过、上游 nzlxg 返回 401 后执行的比较：对同邮箱既有记录，按项目页和 RPC URL 的实际 Cookie 范围比较，只返回 stored_session、auth_values 的 same/different 标签及 missing_auth/extra_auth 数量。没有既有记录时返回 missing，诊断读取失败返回 unknown；不会输出 Cookie 值、邮箱、连接令牌，也不会保存失败上传。3 项新增回归覆盖脱敏、不写账号、域/路径范围、JSON 格式差异和诊断异常不掩盖原拒绝；全套 196 项通过。诊断本身不修复上游拒绝，真实同步仍待用户重试结果。
+为继续定位两份会话差异，5d6c401 增加仅在插件独立鉴权通过、上游 nzlxg 返回 401 后执行的比较：对同邮箱既有记录，按项目页和 RPC URL 的实际 Cookie 范围比较，只返回 stored_session、auth_values 的 same/different 标签及 missing_auth/extra_auth 数量。没有既有记录时返回 missing，诊断读取失败返回 unknown；不会输出 Cookie 值、邮箱、连接令牌，也不会保存失败上传。3 项新增回归覆盖脱敏、不写账号、域/路径范围、JSON 格式差异和诊断异常不掩盖原拒绝；全套 196 项通过。诊断本身不修复上游拒绝，当时真实同步尚待用户重试；最终成功记录见后文。
 
 5d6c401 已固定发布为 d5528bcf，平台确认 1/1 在线、无 staged/applying 变更、500 MB Volume 仍挂载 /app/data。正式域名实际回归全部通过：health、未登录管理保护、错误密码、登录、安全 Cookie、管理/测试页面、Token/日志/统计读取、缓存有效地址、正确/错误 API Key、非空模型目录、退出与会话撤销。已请用户重试一次插件以取得新标签。
 
@@ -128,7 +128,7 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 用户重试诊断版本后仍收到 401，上下文为 `page_identity=missing; cookies_changed=yes; stored_session=different; auth_values=different; missing_auth=3; extra_auth=0`。确认按实际 RPC URL 筛选后上传会话比已保存会话少 3 条标准认证 Cookie；此为记录数量差，不含具体缺失名称，不能仅据此确认分区或存储区就是原因。已准备 [本机只读诊断](plugin-cookie-diagnostics.md)，仅输出 Chrome 运行时的标准 Cookie 名称、计数和布尔状态；不获取用户发来的凭据、不写 Cookie、不访问网络，也不以既有会话补全失败上传。等待用户本机结果继续定位，无需为该脚本重新部署服务。
 
-2026-10-20 用户实际执行本机诊断：插件为 1.3.1，默认上下文和 Flow 普通标签页所在存储区同为 16 条，认证名称相同，当前分区查询为 0 条。缺少此前后台记录中的 SID、HSID、APISID。核对当前 Chromium 源码，确认非 Secure Cookie 的源权限按 HTTP 检查，而上游插件仅要求 Google HTTPS 权限。已准备只新增两项 Google HTTP 权限的 manifest 补丁及配套源码副本，13 个其他文件哈希未变，补丁检查和两份 JS 语法检查通过。用户随后提供原插件目录，10:18（Asia/Shanghai）已备份并原子修改 `D:\Flow2API-Token-Updater-main\manifest.json`；其他清单字段及两份 JS 哈希未变，JS 语法检查通过。Chrome 重新加载、权限确认及修复后真实同步仍待用户操作；这项本机权限修复未发布到 Railway，也未声称已解决全部 401。详情见插件诊断文档。
+2026-10-20 用户实际执行本机诊断：插件为 1.3.1，默认上下文和 Flow 普通标签页所在存储区同为 16 条，认证名称相同，当前分区查询为 0 条。缺少此前后台记录中的 SID、HSID、APISID。核对当前 Chromium 源码，确认非 Secure Cookie 的源权限按 HTTP 检查，而上游插件仅要求 Google HTTPS 权限。已准备只新增两项 Google HTTP 权限的 manifest 补丁及配套源码副本，13 个其他文件哈希未变，补丁检查和两份 JS 语法检查通过。用户随后提供原插件目录，10:18（Asia/Shanghai）已备份并原子修改 `D:\Flow2API-Token-Updater-main\manifest.json`；其他清单字段及两份 JS 哈希未变，JS 语法检查通过。用户重新加载后回复同步成功，服务端 10:22:03 的 POST /api/plugin/update-token 实际 HTTP 200（432 ms），正式域名 /health 200/ok；**插件真实同步 PASS，本次 401 已解决**。这项本机权限修复没有触发 Railway 部署，不涉及验证码或上游校验放宽；图片/视频生成仍 BLOCKED / NOT RUN。详情见插件诊断文档。
 
 同日跨日余额复核尝试在管理员登录阶段被拒绝，所用为 Railway 初始化变量，未重复尝试、未覆盖 DB 中管理员配置，也未执行余额请求。因此余额查询通过的证据仍为 2026-10-19 记录；不能声称 10-20 已重新验证该会话。此项不阻止独立准备插件权限补丁，无需在聊天索取新密码。
 
@@ -136,5 +136,5 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 ## 用户下一步
 
-1. 原插件目录的最小权限修复已完成；在 Chrome 重新加载现有插件，并在出现提示时确认权限、重试同步。后台账号无需重复添加；用户暂无现有验证码配置，真实生成按要求记录受阻。不要在聊天发送 Token/Cookie/密钥，DNS 无需重复修改。
+1. 插件同步已通过，不需要重复添加账号或修改 DNS。用户暂无现有验证码配置，真实生成按要求记录受阻；未来具备符合上游使用规则的现有配置后，再继续已经授权的各一次图片/视频验收。不要在聊天发送 Token/Cookie/密钥。
 2. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。

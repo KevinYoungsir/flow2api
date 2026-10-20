@@ -17,6 +17,7 @@
 | 插件返回 400，内层 Google Cookie 验证 rpc=nzlxg, code=401 | 插件连接鉴权已通过，Google 未接受当前登录态；仅凭该码无法判断过期、账号混用或兼容性。在同一 Chrome 用户配置打开 https://flow.google.com/projects，确认可见账号/项目且与插件邮箱一致；需要时重新登录再同步。页面正常且账号一致仍失败时继续排查客户端兼容性。服务只在上游验证成功后保存可用账号 |
 | 网页正常但服务器同步仍 401 | 已修正 bootstrap GET 更新/删除的 Cookie 未传给后续 RPC 的兼容缺陷。修复版会保留作用域和同次请求的会话更新；若仍失败，记录新的错误文字及 page_identity / cookies_changed 两个标签。这些标签不包含凭据，不能单凭它们断言 Google 的具体拒绝原因 |
 | 已保存账号能查询余额，但插件上传仍 401 | 新版失败响应仅在插件连接鉴权通过后比较同邮箱记录。stored_session 表示项目页/RPC 的 Cookie 对是否相同，auth_values 表示认证 Cookie 对是否相同；missing_auth/extra_auth 是按 URL 作用域过滤后的认证 Cookie 数量差。missing 表示没有可比记录，unknown 表示诊断失败；均不含 Cookie 值。保留新错误文字，不要导出凭据到聊天；Google 拒绝的会话不会写入账号 |
+| 插件 1.3.1 漏采 SID、HSID、APISID，missing_auth=3 | Google 主机权限只含 HTTPS 时，Chromium 对非 Secure Cookie 的 HTTP 源权限检查会过滤这些记录。已验证的修复是在原解压目录 manifest.json 补 http://google.com/* 和 http://*.google.com/*，保留其他内容与 HTTPS 上传；备份后重新加载插件，并在出现提示时确认权限。2026-10-20 本项目真实同步已 HTTP 200，详见 [插件诊断记录](plugin-cookie-diagnostics.md)。更新插件源码后需核对权限仍保留 |
 | 账号有额度但生成前失败 | 查看选中的验证码方式是否具备其要求的现有合法配置；本次预检 yescaptcha 密钥为空，因此图片/视频未提交。只在后台保存密钥，不要为部署验收绕过验证或上游限制 |
 | 修改密码后旧会话 401 | 预期：所有管理员会话撤销，重新登录 |
 | /metrics 或 /docs 未公开 | metrics 需要管理员会话，docs/openapi 在生产关闭；health 保持公开 |
