@@ -101,7 +101,7 @@
       "cache_timeout_env": "7200"
     }
   },
-  "video_followup": "Native domain confirmed flow.google.com. Subsequent readonly nzlxg query now returns code=401, also with DB runtime configuration and existing account binding. Await plugin resync result before further parameter comparison. No additional generation requests or deployments this round.",
+  "video_followup": "User confirmed native ordinary Fast at flow.google.com, 720p. Plugin resync at 03:12:37Z verified HTTP 200; subsequent credits and both readonly settings RPCs succeed. Settings contain no model key evidence. Previous equivalence of relaxed suffix to native lower priority remains unproven. Await public frontend script diagnostic; no further generation or production mutation.",
   "credential_handling": "API key used in RAM only; no credentials retained in this report.",
   "initial_deployment_id": "be1dd801-362d-4915-ae3d-210c28a3fa8b",
   "initial_source_commit": "5d6c401df4330b411c4f8c6aec92677455f81af3",
@@ -184,5 +184,72 @@
     },
     "additional_generation_requests": 0,
     "production_settings_changed": false
+  },
+  "after_resync": {
+    "plugin_upload": {
+      "timestamp_utc": "2026-10-20T03:12:37.485979565Z",
+      "http_status": 200,
+      "duration_ms": 691
+    },
+    "native_domain": "flow.google.com",
+    "native_resolution": "720p",
+    "native_option": "ordinary Fast",
+    "readonly_probe": {
+      "diagnostic_runtime_matches_db_config": true,
+      "account_proxy_present": false,
+      "credits_rpc": {
+        "succeeded": true,
+        "tier_field_type": "int",
+        "upstream_tier": "PAYGATE_TIER_ONE",
+        "stored_tier": "PAYGATE_TIER_ONE",
+        "positive_credits": true
+      },
+      "videofx_settings": {
+        "succeeded": true,
+        "top_level_types": [
+          "NoneType",
+          "str",
+          "list",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "list",
+          "bool",
+          "bool"
+        ],
+        "known_model_entries": []
+      },
+      "flow_settings": {
+        "succeeded": true,
+        "top_level_types": [
+          "NoneType",
+          "str",
+          "list",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "NoneType",
+          "list",
+          "bool",
+          "bool"
+        ],
+        "known_model_entries": []
+      }
+    },
+    "source_audit_text_video_resolution_argument": null,
+    "null_resolution_upstream_default_verified": false,
+    "native_priority_key_equivalence_verified": false,
+    "additional_generation_requests": 0,
+    "production_settings_changed": false,
+    "diagnostic_script": "scripts/diagnose_flow_public_models.js",
+    "diagnostic_node_checks": "pass",
+    "real_browser_diagnostic_status": "awaiting_user_output"
   }
 }

@@ -2,7 +2,7 @@
 
 日期：2026-10-19 至 2026-10-20（Asia/Shanghai）。分支：`deploy/railway-single-service`。基线：`60e673b05fe2630189f49e6dd3b275c2c8599158`。最终提交 SHA 使用 `git rev-parse HEAD` 获取（避免把提交本身 SHA 循环写入同一提交）；对话最终报告会提供实际 SHA。
 
-当前业务验收：**真实图片 PASS；普通 Fast 标准优先级映射已修复发布，但视频验证仍 FAIL（PUBLIC_ERROR_MODEL_ACCESS_DENIED）**。完整 197 项回归通过，当前部署 d54f59c。用户已确认网页也为 flow.google.com；11:05 起只读排查发现保存会话的余额 RPC 新返回 401，待插件重新同步后先复核认证，尚未提供成功视频分辨率。本轮未额外生成或部署，不能将新 401 当成此前模型拒绝的已证实原因。详见 [本次真实生成报告](live-acceptance-20261020.md)。以下按阶段保留历史阻塞与修复记录。
+当前业务验收：**真实图片 PASS；已部署的标准 Fast key 变更未解决视频 MODEL_ACCESS_DENIED，网页普通 Fast 的内部映射仍待核对**。完整 197 项回归通过，当前部署 d54f59c。用户已确认 flow.google.com、普通 Fast、720p；11:12 重新同步后，先前新增的只读 401 已消失，余额及两种用户设置查询成功。本轮未额外生成、修改参数或部署；已准备 [公开前端诊断](flow-public-model-diagnostics.md)，等待实际页面输出，避免仅凭内部后缀或未指定分辨率推断原因。详见 [本次真实生成报告](live-acceptance-20261020.md)。以下按阶段保留历史阻塞与修复记录。
 
 ## 阶段一：审计完成
 
@@ -144,5 +144,5 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 
 ## 用户下一步
 
-1. 历史插件同步和真实图片已通过，普通 Fast 映射修复 d54f59c 已部署但视频仍拒绝。用户已确认网页域名为 flow.google.com；当前保存会话新出现余额 RPC 401，请在同一 Chrome 用户配置确认 Flow 登录并点击插件「立即同步」，只回复同步结果。分辨率若可见可一并说明，无需额外生成、重新配置 DNS 或发送完整请求、Token/Cookie/密钥。
+1. 插件已于 11:12 重新同步成功，随后只读认证通过；无需再次同步、生成或发送凭据。请按 [公开前端诊断](flow-public-model-diagnostics.md) 在此前视频所在的 Flow 项目页面运行已准备脚本，只回复诊断行，以核对实际模型定义。网页已确认普通 Fast、720p；不要发送 HAR、完整请求体、Token/Cookie/密钥。
 2. 如需补齐本地容器/Compose 验收，安装并启动 Docker Desktop Linux 容器引擎后运行现有检查脚本。此项不阻止当前已通过的 Railway 容器部署。
