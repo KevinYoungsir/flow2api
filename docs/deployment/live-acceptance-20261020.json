@@ -92,6 +92,17 @@
           "rpc=YhhmEf"
         ],
         "recorded_image_attempt_count": null
+      },
+      {
+        "operation": "generate_video",
+        "model": "veo-3.1-fast-8s-landscape",
+        "business_status_code": 200,
+        "status_text": "completed",
+        "progress": 100,
+        "duration_seconds": 67.97478365898132,
+        "created_at_utc": "2026-10-20 03:30:28",
+        "upstream_error_codes": [],
+        "recorded_image_attempt_count": null
       }
     ],
     "cache": {
@@ -101,7 +112,7 @@
       "cache_timeout_env": "7200"
     }
   },
-  "video_followup": "User confirmed native ordinary Fast at flow.google.com, 720p. Plugin resync at 03:12:37Z verified HTTP 200; subsequent credits and both readonly settings RPCs succeed. Settings contain no model key evidence. Previous equivalence of relaxed suffix to native lower priority remains unproven. Await public frontend script diagnostic; no further generation or production mutation.",
+  "video_followup": "Complete for the requested live sample. Native model catalog cost category 2 permits ordinary Fast 8s (20 credits listed) and marks 4s/6s unavailable. One catalog-supported 8s request completed in 68.8s, with an accessible 1280x720 MP4 and verified volume backup. Previous 4s failures preserved. No further production mutation or deployment was required.",
   "credential_handling": "API key used in RAM only; no credentials retained in this report.",
   "initial_deployment_id": "be1dd801-362d-4915-ae3d-210c28a3fa8b",
   "initial_source_commit": "5d6c401df4330b411c4f8c6aec92677455f81af3",
@@ -128,7 +139,7 @@
   },
   "request_counts": {
     "image": 1,
-    "video": 2
+    "video": 3
   },
   "regression": {
     "targeted_tests": 30,
@@ -250,6 +261,84 @@
     "production_settings_changed": false,
     "diagnostic_script": "scripts/diagnose_flow_public_models.js",
     "diagnostic_node_checks": "pass",
-    "real_browser_diagnostic_status": "awaiting_user_output"
+    "real_browser_diagnostic_status": "completed: 7 public assets, 7 read successfully"
+  },
+  "final_video": {
+    "kind": "video",
+    "model": "veo-3.1-fast-8s-landscape",
+    "prompt": "A red ceramic teapot on a pale wooden table beside a small green plant. A gentle breeze moves the leaves in warm morning sunlight. Locked camera, peaceful still life, no people, no text.",
+    "started_at": "2026-10-20T03:30:27.215340+00:00",
+    "status": "pass",
+    "api_requests": 1,
+    "http_status": 200,
+    "stream_done": true,
+    "safe_error_codes": [],
+    "error_received": false,
+    "result_url_count": 1,
+    "result_url": "https://socool.xin/tmp/11af64cae43f03c1405ba95461e4e555.mp4",
+    "media_check": {
+      "http_status": 206,
+      "content_type": "video/mp4",
+      "media_signature_valid": true,
+      "accessible": true
+    },
+    "elapsed_seconds": 68.8,
+    "run_label": "native-fast-eight",
+    "upstream_model_key": "veo_3_1_t2v_fast",
+    "catalog_credits_cost": 20,
+    "native_cost_category": 2,
+    "resolution": "720p (native default)",
+    "mp4_verification": {
+      "full_http_status": 200,
+      "content_type": "video/mp4",
+      "bytes": 2046842,
+      "sha256": "3ee5714fd44aefff4941c73bdf7a7c15baff2da2cc34beb451343991f04a1301",
+      "valid_top_level_boxes": [
+        "ftyp",
+        "uuid",
+        "mdat",
+        "moov"
+      ],
+      "video_tracks": [
+        {
+          "width": 1280.0,
+          "height": 720.0,
+          "duration_seconds": 8.0,
+          "codec": "avc1",
+          "sample_count": 192,
+          "frames_per_second": 24.0
+        }
+      ],
+      "full_frame_decode_performed": false,
+      "scope": "Complete bytes and ISO BMFF structure/track metadata checked; no local decoder installed."
+    },
+    "volume_backup": {
+      "backup_path": "/app/data/acceptance/20261020/11af64cae43f03c1405ba95461e4e555.mp4",
+      "hash_verified": true
+    }
+  },
+  "final_acceptance": {
+    "image": "pass",
+    "video": "pass (ordinary Fast, 8s, 720p)",
+    "result_access": "pass",
+    "sse_completion": "pass for the recorded requests",
+    "video_full_frame_decode": "not performed",
+    "over_15_minute_jobs": "not tested",
+    "local_docker_compose": "blocked: engine not installed"
+  },
+  "native_model_evidence": "flow-native-model-evidence-20261020.json",
+  "native_protocol_conclusions": {
+    "text_video_rpc": "YhhmEf",
+    "tool_field_2": 22,
+    "project_field_6": true,
+    "recaptcha_field_11": true,
+    "video_request_model_key_field": 2,
+    "video_request_resolution_override_field": 8,
+    "ui_resolution_720p": 1,
+    "720p_omits_resolution_override": true,
+    "backend_default_matches_native_720p": true,
+    "ordinary_fast_catalog_contains_standard_4s_and_6s_keys": true,
+    "duration_availability_checked_for_cost_category": 2,
+    "not_used_as_evidence": "An internal relaxed suffix alone does not establish the current UI priority label."
   }
 }

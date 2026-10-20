@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-20",
+  "timezone": "Asia/Shanghai",
+  "origin": "User-provided runtime diagnostic from the existing Flow project, followed by public static-source inspection and authenticated read-only model queries.",
+  "public_diagnostic": {
+    "version": 1,
+    "public_assets_found": 7,
+    "inspected": 7,
+    "failed": 0,
+    "skipped": 0,
+    "stream_chat_in_public_source": true,
+    "model_keys_in_static_scripts": [],
+    "resolution_constants": [
+      "VIDEO_RESOLUTION_1080P",
+      "VIDEO_RESOLUTION_4K",
+      "VIDEO_RESOLUTION_720P"
+    ]
+  },
+  "public_assets": [
+    {
+      "index": 0,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=XRV0Af,_b,rZcQQd,wO1vlb,zxMy9c/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=wj3Fuc",
+      "bytes": 735581,
+      "sha256": "c96a1b8ea500307626a76dbcb8d942239de31674a539e321c3484e68546283c1"
+    },
+    {
+      "index": 1,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=XRV0Af,_b,wO1vlb,zxMy9c/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=rZcQQd",
+      "bytes": 78936,
+      "sha256": "6de1b1b0913e1cb4b3d03b365f453cce16df0355d4d831335e6e29017ed95f46"
+    },
+    {
+      "index": 2,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=XRV0Af,_b,wO1vlb/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=zxMy9c",
+      "bytes": 38183,
+      "sha256": "31327770bfc0f64e43e2512f020484fc1746fc8cf41beb7fb817c018a3b25280"
+    },
+    {
+      "index": 3,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=_b,wO1vlb/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=XRV0Af",
+      "bytes": 1705575,
+      "sha256": "0d5adab6ab72b572bc67bdc3dc57676446a67083e4eb68fa41c69b9c624cc1e1"
+    },
+    {
+      "index": 4,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=_b/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=wO1vlb",
+      "bytes": 3548423,
+      "sha256": "05bca2ce41d5b6819cd13e574fbb664766d11a3422c38eaef4c096f269839854"
+    },
+    {
+      "index": 5,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/ck=boq-labs-ai-sandbox.AiSandboxAngularFrontend.lY61RRYx2Hs.L.B1.O/d=1/exm=_b/excm=_b/ed=1/br=1/wt=2/ujg=1/rs=APwUF7xAmS5oIgVFs4YjgwSVcp2D5ayfUw/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=zxMy9c",
+      "bytes": 145521,
+      "sha256": "12c10756a6fe6f1bbaca344b7799496fe23adb0240a76b82c353b413314b402b"
+    },
+    {
+      "index": 6,
+      "public_url": "https://www.gstatic.com/_/mss/boq-labs-ai-sandbox/_/js/k=boq-labs-ai-sandbox.AiSandboxAngularFrontend.zh_CN.hV7oFbe26CM.2018.O/d=1/excm=_b/ed=1/dg=0/br=1/wt=2/ujg=1/rs=APwUF7zPgjgsx0Mi2WDmq15YZQwZQpzj_w/ee=Pjplud:PoEs9b;QGR0gd:Mlhmy;ScI3Yc:e7Hzgb;YIZmRd:A1yn5d;cEt90b:ws9Tlc;dowIGb:ebZ3mb/dti=1/m=_b",
+      "bytes": 1070341,
+      "sha256": "2813fc2ae776beb66bcc069c8d1a1456d78e731f824b46041a1c96b00ffcb9ba"
+    }
+  ],
+  "readonly_model_rpcs": {
+    "HTrJv": "FlowService.GetModels",
+    "yBhWQ": "FlowService.ListModelStatuses"
+  },
+  "account_cost_category_snapshot": {
+    "credits_rpc_succeeded": true,
+    "native_cost_category": 2,
+    "paygate_tier_number": 1,
+    "native_fast_options": [
+      {
+        "model_key": "veo_3_1_t2v_fast",
+        "seconds": 8,
+        "available_for_rpc_cost_category": true,
+        "credits_cost": 20
+      },
+      {
+        "model_key": "veo_3_1_t2v_fast_4s",
+        "seconds": 4,
+        "available_for_rpc_cost_category": false,
+        "credits_cost": null
+      },
+      {
+        "model_key": "veo_3_1_t2v_fast_6s",
+        "seconds": 6,
+        "available_for_rpc_cost_category": false,
+        "credits_cost": null
+      }
+    ]
+  },
+  "native_protocol": {
+    "text_video_rpc": "YhhmEf",
+    "tool_field_2": 22,
+    "project_field_6": true,
+    "recaptcha_field_11": true,
+    "video_request_model_key_field": 2,
+    "video_request_resolution_override_field": 8,
+    "ui_resolution_720p": 1,
+    "720p_omits_resolution_override": true,
+    "backend_default_matches_native_720p": true,
+    "ordinary_fast_catalog_contains_standard_4s_and_6s_keys": true,
+    "duration_availability_checked_for_cost_category": 2,
+    "not_used_as_evidence": "An internal relaxed suffix alone does not establish the current UI priority label."
+  },
+  "validation_boundary": "Public definitions and model-directory cost rules justify the selected eight-second option. Only the completed live generation proves that sample succeeded; no entitlement/category was changed."
+}

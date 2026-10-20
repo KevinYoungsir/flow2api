@@ -59,6 +59,8 @@
 
 ### Railway 单服务部署
 
+正式实例 `https://socool.xin` 已完成真实图片及普通 Fast 八秒 720p 视频验收。当前账号视频使用 `veo-3.1-fast-8s-landscape`；原生目录的当前费用类别不支持四秒/六秒，完整记录见 [真实生成验收](docs/deployment/live-acceptance-20261020.md)。
+
 Windows 本地 Docker Compose 用法保持兼容。部署 Railway 前请阅读 [部署指南](docs/deployment/railway.md) 和 [环境变量](docs/deployment/environment-variables.md)：生产环境必须显式提供安全凭据、HTTPS 来源和 `/app/data` 持久卷，不能使用下面的本地示例凭据。
 
 ### 前置要求

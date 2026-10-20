@@ -1,6 +1,8 @@
 # 当前 Flow 视频模型的公开源码诊断
 
-## 目的与现有证据
+当前结果：**诊断已完成，视频验收 PASS**。用户返回 7 个公开脚本，全部读取成功；实际视频模块提供 GetModels 只读接口。当前费用类别 2 可用普通 Fast 八秒，四秒/六秒不可用；按目录选择八秒后约 69 秒成功，实际 720p、8 秒。原生 720p 不发送分辨率覆盖消息，后端空值与之相符。来源和结果见 [原生模型证据](flow-native-model-evidence-20261020.json)及 [验收记录](live-acceptance-20261020.md)。
+
+## 诊断前的问题与准备（历史）
 
 用户已确认 flow.google.com、普通 Fast、720p。2026-10-20 11:12:37（Asia/Shanghai）插件同步实际 HTTP 200；其后余额、VideoFxService.GetUserSettings、FlowService.GetUserSettings 只读查询均成功，上游层级枚举 PAYGATE_TIER_ONE 与保存值相同。两个设置响应均未找到模型 key 字符串，本轮没有新增生成请求。
 
@@ -22,4 +24,4 @@
 
 输出包含已校验的公开脚本地址、模型/分辨率常量、公开视频 RPC 名称、计数和遮蔽无关字符串后的公开源码片段；资源列表中其他私有 URL 和失败异常文字不会输出。若跨域读取失败，可使用这些公开脚本地址继续核对，无需发送 HAR、原始请求体或 Copy as cURL。
 
-已实际通过 `node --check scripts/diagnose_flow_public_models.js` 和 `node tests/test_flow_public_model_diagnostic.cjs`。测试覆盖公开域名白名单、拒绝私有资源/凭据/查询串/伪装域名、省略凭据的 GET、请求上限、禁止读取 Cookie/存储、无关字符串脱敏和错误隐藏。真实页面的模块和跨域行为尚待用户输出。静态常量存在本身不等于已捕获网页成功请求或已证明模型权限。
+已实际通过 `node --check scripts/diagnose_flow_public_models.js` 和 `node tests/test_flow_public_model_diagnostic.cjs`。测试覆盖公开域名白名单、拒绝私有资源/凭据/查询串/伪装域名、省略凭据的 GET、请求上限、禁止读取 Cookie/存储、无关字符串脱敏和错误隐藏。用户实际页面也已执行，7 个资源均成功读取。静态常量存在本身不等于成功请求或权限；本次结合动态目录和唯一一次可用八秒选项的真实生成完成验证。
