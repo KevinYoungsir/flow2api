@@ -75,7 +75,9 @@ CLI 5.26.2 的早期 OAuth 失效已通过用户完成 `railway login` 解决，
 - 当前源码固定为 **`5d6c401df4330b411c4f8c6aec92677455f81af3`**，分支 deploy/railway-single-service；首个可运行版本为 4e4519f，缓存地址修复版为 bb1cc904，插件来源修复版为 95b22111，会话连续性修复版为 d2053ea2。后续文档提交不会改变当前固定的运行版本。
 - 正式地址 [https://socool.xin](https://socool.xin)，[Railway 地址](https://flow2api-production-d82c.up.railway.app)继续可用，均指向 8000；PUBLIC_BASE_URL 为根域，CORS 同时包含两个地址。
 
-首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复为 ca4df022（SUCCESS，17:19:13），会话连续性修复为 104c3d82（SUCCESS，17:37:54）。当前诊断版本部署 **`d5528bcf-0012-491b-b751-43d90a78ebd9`（SUCCESS，17:53:14）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。当前 1/1 副本在线、0 crashed，无待发布变更；控制台仍显示首个历史失败，不代表当前部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
+首个部署 `a36c4b4c-9cfa-4116-ab99-d8938c54704b` 镜像构建通过，但因 API Key 少于 32 字符而安全启动失败。用户更新 Key 后，部署 `743a372a-cd29-423a-b642-3ac7a02795b4` SUCCESS；16:36:55（Asia/Shanghai）授权重启后通过持久化检查。根域切换与显示修复分别发布为 588caffd 和 e935c3c0（SUCCESS，16:55:54）。随后插件来源修复为 ca4df022（SUCCESS，17:19:13），会话连续性修复为 104c3d82（SUCCESS，17:37:54）。诊断版本首次部署 **`d5528bcf-0012-491b-b751-43d90a78ebd9`（SUCCESS，17:53:14）**。运行日志已确认监听 `0.0.0.0:8000`、识别既有数据库、迁移完成。该次验证 1/1 副本在线、0 crashed，无待发布变更；控制台当时仍显示首个历史失败，不代表该次部署失败。Uvicorn 的 INFO 行被平台归入 stderr/error，不是应用启动异常。
+
+2026-10-20 本机插件修复后再次只读核对平台：当前部署为 be1dd801-362d-4915-ae3d-210c28a3fa8b（SUCCESS，创建时间 09:11:15 Asia/Shanghai），源码仍固定为 5d6c401，服务 live 且无 staged 变更；正式域名 /health 实际返回 200/ok。该部署在本次 10:18 本机权限修复之前已创建，本次没有操作云端部署或改写设置。
 
 | 云端检查 | 实际结果 |
 | --- | --- |
